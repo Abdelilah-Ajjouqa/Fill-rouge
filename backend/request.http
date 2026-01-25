@@ -1,0 +1,68 @@
+### Create Admin User
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "email": "admin@fitmanager.com",
+  "password": "securepassword123",
+  "role": "ADMIN",
+  "firstName": "Admin",
+  "lastName": "User"
+}
+
+### Create Coach User
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "email": "coach@fitmanager.com",
+  "password": "coachpassword123",
+  "role": "COACH",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+
+### Create Member User
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "email": "member@fitmanager.com",
+  "password": "memberpassword123",
+  "role": "MEMBER",
+  "firstName": "Jane",
+  "lastName": "Smith"
+}
+
+### Get User by ID (Replace :id with actual ID from response)
+GET http://localhost:3000/users/YOUR_USER_ID_HERE
+
+### Login Admin
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@fitmanager.com",
+  "password": "securepassword123"
+}
+
+### Login Coach
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "email": "coach@fitmanager.com",
+  "password": "coachpassword123"
+}
+
+### Register New Member (Public Endpoint)
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "email": "newmember@fitmanager.com",
+  "password": "newpassword123",
+  "role": "MEMBER",
+  "firstName": "New",
+  "lastName": "Member"
+}
