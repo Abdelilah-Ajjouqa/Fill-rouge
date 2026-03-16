@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { ActivitiesModule } from './activities/activities.module';
+import { GymsModule } from './gyms/gyms.module';
 import { MongodbConfig } from './config/Mongodb.config';
 
 @Module({
@@ -22,6 +23,7 @@ import { MongodbConfig } from './config/Mongodb.config';
     UsersModule,
     AuthModule,
     ActivitiesModule,
+    GymsModule,
   ],
   controllers: [],
   providers: [],

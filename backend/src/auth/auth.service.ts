@@ -10,7 +10,7 @@ export class AuthService {
     constructor(
         private usersService: UsersService,
         private jwtService: JwtService,
-    ) { }
+    ) {}
 
     async validateUser(email: string, pass: string): Promise<any> {
         const user = await this.usersService.findByEmail(email);
@@ -26,7 +26,12 @@ export class AuthService {
         if (!user) {
             throw new UnauthorizedException('Invalid credentials');
         }
-        const payload = { email: user.email, sub: user._id, role: user.role };
+        const payload = {
+            email: user.email,
+            sub: user._id,
+            role: user.role,
+            gymId: user.gymId || null,
+        };
         return {
             access_token: this.jwtService.sign(payload),
             user,
@@ -35,5 +40,9 @@ export class AuthService {
 
     async register(registrationData: CreateUserDto) {
         return this.usersService.create(registrationData);
+    }
+
+    async getProfile(userId: string) {
+        return this.usersService.findOne(userId);
     }
 }

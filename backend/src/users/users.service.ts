@@ -8,7 +8,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-    constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) { }
+    constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
     async create(createUserDto: CreateUserDto): Promise<User> {
         const { password, ...rest } = createUserDto;
@@ -26,15 +26,16 @@ export class UsersService {
     }
 
     async findOne(id: string): Promise<User | null> {
-        const user = await this.userModel.findById(id).exec();
+        const user = await this.userModel.findById(id).select('-passwordHash').exec();
         if (!user) {
             throw new NotFoundException(`User with ID "${id}" not found`);
         }
         return user;
     }
 
-    async findAll(): Promise<User[]> {
-        return this.userModel.find().exec();
+    async findAll(gymId?: string): Promise<User[]> {
+        const filter = gymId ? { gymId } : {};
+        return this.userModel.find(filter).select('-passwordHash').exec();
     }
 
     async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
@@ -48,6 +49,7 @@ export class UsersService {
 
         const updatedUser = await this.userModel
             .findByIdAndUpdate(id, updateData, { new: true })
+            .select('-passwordHash')
             .exec();
 
         if (!updatedUser) {

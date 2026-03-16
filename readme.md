@@ -68,10 +68,14 @@ Il y a **4 rôles** dans la plateforme, organisés comme une pyramide :
 
 ### 3.4 Membre (adhérent)
 
-- N'a **pas de compte** sur la plateforme (pas de login).
-- Est inscrit et géré par le coach ou l'admin.
+- **Possède un compte** sur la plateforme avec un accès **lecture seule**.
+- Est créé et géré par le coach ou l'admin (qui lui crée son compte).
 - Peut être inscrit à **plusieurs activités** dans la même salle.
-- Son abonnement, ses paiements et son statut sont visibles par le coach et l'admin.
+- Peut se connecter pour consulter :
+  - Ses abonnements actifs et expirés
+  - Son historique de paiements et ses dettes
+  - Le planning de ses activités
+- Ne peut **rien modifier** — toute gestion passe par le coach ou l'admin.
 
 ---
 
@@ -106,10 +110,12 @@ L'Admin de chaque salle crée les activités proposées.
 
 ### 4.3 Module : Gestion des Membres
 
-Les membres sont ajoutés par les coachs ou les admins. Ils appartiennent à **une salle** (pas à la plateforme).
+Les membres sont ajoutés par les coachs ou les admins. Ils appartiennent à **une salle** (pas à la plateforme). Ils possèdent un compte avec accès **lecture seule**.
 
 **Données d'un membre :**
 - Nom, Prénom
+- Email
+- Mot de passe
 - Téléphone
 - Date de naissance
 - Photo (optionnel)
@@ -118,6 +124,7 @@ Les membres sont ajoutés par les coachs ou les admins. Ils appartiennent à **u
 **Règles :**
 - Un membre peut être inscrit à plusieurs activités dans la même salle (ex: Boxe + Yoga).
 - Si deux activités ont le même horaire, le système affiche un **avertissement** mais ne bloque pas l'inscription (le membre choisira laquelle il attend chaque jour).
+- Un membre peut se connecter uniquement pour **consulter** ses données (lecture seule).
 
 ### 4.4 Module : Abonnements
 
@@ -171,6 +178,11 @@ Chaque rôle voit un dashboard différent.
 - Liste des membres avec paiement en retard
 - Prochaines séances
 
+**Membre :**
+- Ses abonnements actifs (activités, dates, statut)
+- Son historique de paiements et solde restant
+- Le planning de ses activités (jours et horaires)
+
 ---
 
 ## 5. Modèle de Données
@@ -208,6 +220,8 @@ Note : Le Super Admin n'a pas de `gymId` (il gère la plateforme entière).
   gymId: ObjectId → gyms,
   firstName: String,
   lastName: String,
+  email: String (unique),
+  passwordHash: String,
   phone: String,
   dateOfBirth: Date,
   photo: String,
@@ -215,7 +229,7 @@ Note : Le Super Admin n'a pas de `gymId` (il gère la plateforme entière).
   createdAt, updatedAt
 }
 ```
-Note : Les membres n'ont pas de mot de passe — ils ne se connectent pas.
+Note : Les membres ont un compte avec accès **lecture seule** — ils peuvent consulter leurs données mais ne peuvent rien modifier.
 
 ### D. Collection `activities`
 ```
@@ -263,8 +277,9 @@ Note : Les membres n'ont pas de mot de passe — ils ne se connectent pas.
 ### Auth
 | Méthode | Route | Qui | Description |
 |---------|-------|-----|-------------|
-| POST | /auth/login | Tous | Se connecter |
-| POST | /auth/register | Super Admin / Admin | Créer un compte (admin ou coach) |
+| POST | /auth/login | Tous (y compris membres) | Se connecter |
+| POST | /auth/register | Super Admin / Admin | Créer un compte (admin, coach, ou membre) |
+| GET | /auth/me | Tous (authentifié) | Voir son propre profil |
 
 ### Gyms
 | Méthode | Route | Qui | Description |
@@ -316,5 +331,5 @@ Note : Les membres n'ont pas de mot de passe — ils ne se connectent pas.
 4. **Si deux activités ont le même horaire** → avertissement affiché, mais inscription autorisée.
 5. **Les paiements partiels sont autorisés** → le système calcule le reste à payer.
 6. **L'abonnement expire automatiquement** après la période payée (1 mois par défaut).
-7. **Les membres ne se connectent pas** — ils sont gérés par les coachs et admins.
+7. **Les membres ont un compte en lecture seule** — ils peuvent consulter leurs abonnements, paiements et plannings, mais ne peuvent rien modifier.
 8. **Chaque rôle ne voit que ce qui le concerne** (isolation des données par salle et par rôle).

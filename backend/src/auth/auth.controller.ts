@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dto/create-user.dto';
@@ -9,7 +9,7 @@ import { UserRole } from 'src/users/schemas/user.schema';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private authService: AuthService) { }
+    constructor(private authService: AuthService) {}
 
     @Post('login')
     async login(@Body() loginDto: LoginDto) {
@@ -18,8 +18,14 @@ export class AuthController {
 
     @Post('register')
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN)
+    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
     async register(@Body() createUserDto: CreateUserDto) {
         return this.authService.register(createUserDto);
+    }
+
+    @Get('me')
+    @UseGuards(JwtAuthGuard)
+    async getProfile(@Request() req: any) {
+        return this.authService.getProfile(req.user.userId);
     }
 }
