@@ -12,6 +12,9 @@ export class ScheduleSlot {
 
 @Schema({ timestamps: true })
 export class Activity {
+    @Prop({ type: Types.ObjectId, ref: 'Gym', required: true })
+    gymId: Types.ObjectId;
+
     @Prop({ required: true })
     name: string;
 
