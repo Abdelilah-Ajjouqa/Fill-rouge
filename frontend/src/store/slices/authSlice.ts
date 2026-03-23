@@ -28,7 +28,7 @@ export const loginUser = createAsyncThunk<void, Record<string, string>, { reject
       const response = await api.post<AuthResponse>('/auth/login', credentials);
       const { access_token } = response.data;
 
-      // 2. Save it to local storage so the interceptor can use it immediately
+      // 2. Save it to local storage
       localStorage.setItem('access_token', access_token);
       dispatch(setToken(access_token));
 
