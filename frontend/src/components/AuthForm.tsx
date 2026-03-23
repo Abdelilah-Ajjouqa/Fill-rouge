@@ -1,14 +1,21 @@
 import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../store/store';
+import { loginUser } from '../store/slices/authSlice';
 
 export function AuthForm() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { isLoading, error } = useSelector((state: RootState) => state.auth);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login submission
-    console.log('Login submitted:', { email, password });
+    if (email && password) {
+      dispatch(loginUser({ email, password }));
+    }
   };
 
   return (
@@ -88,15 +95,23 @@ export function AuthForm() {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 text-red-400 text-sm p-3 rounded">
+            {error}
+          </div>
+        )}
+
         {/* Submit Button */}
         <button
           type="submit"
-          className="relative mt-8 w-full bg-[#DFFF00] py-4 text-sm font-bold uppercase tracking-widest text-[#050505] transition-all duration-300 hover:bg-[#DFFF00]/90"
+          disabled={isLoading}
+          className="relative mt-8 w-full bg-[#DFFF00] py-4 text-sm font-bold uppercase tracking-widest text-[#050505] transition-all duration-300 hover:bg-[#DFFF00]/90 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             boxShadow: '0 0 20px rgba(223, 255, 0, 0.3), 0 0 40px rgba(223, 255, 0, 0.1)',
           }}
         >
-          Sign In
+          {isLoading ? 'Signing In...' : 'Sign In'}
         </button>
       </form>
     </div>
