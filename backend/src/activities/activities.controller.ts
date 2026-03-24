@@ -17,32 +17,36 @@ export class ActivitiesController {
 
     @Post()
     @Roles(UserRole.ADMIN)
-    create(@Body() createActivityDto: CreateActivityDto) {
-        return this.activitiesService.create(createActivityDto);
+    create(@Request() req: any, @Body() createActivityDto: CreateActivityDto) {
+        return this.activitiesService.create(createActivityDto, req.user.gymId);
     }
 
     @Get()
+    @Roles(UserRole.ADMIN, UserRole.COACH)
     findAll(@Request() req: any) {
         if (req.user.role === UserRole.COACH) {
-            return this.activitiesService.findByCoach(req.user.userId);
+            // Coach sees only their assigned activities in this gym
+            return this.activitiesService.findByCoach(req.user.userId, req.user.gymId);
         }
-        return this.activitiesService.findAll();
+        // Admin sees all activities for their gym
+        return this.activitiesService.findAll(req.user.gymId);
     }
 
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.activitiesService.findOne(id);
+    @Roles(UserRole.ADMIN, UserRole.COACH)
+    findOne(@Request() req: any, @Param('id') id: string) {
+        return this.activitiesService.findOne(id, req.user.gymId);
     }
 
     @Patch(':id')
     @Roles(UserRole.ADMIN)
-    update(@Param('id') id: string, @Body() updateActivityDto: UpdateActivityDto) {
-        return this.activitiesService.update(id, updateActivityDto);
+    update(@Request() req: any, @Param('id') id: string, @Body() updateActivityDto: UpdateActivityDto) {
+        return this.activitiesService.update(id, updateActivityDto, req.user.gymId);
     }
 
     @Delete(':id')
     @Roles(UserRole.ADMIN)
-    remove(@Param('id') id: string) {
-        return this.activitiesService.remove(id);
+    remove(@Request() req: any, @Param('id') id: string) {
+        return this.activitiesService.remove(id, req.user.gymId);
     }
 }
