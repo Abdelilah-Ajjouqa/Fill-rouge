@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { GymsModule } from './gyms/gyms.module';
 import { MongodbConfig } from './config/Mongodb.config';
+import { MembersModule } from './members/members.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { MongodbConfig } from './config/Mongodb.config';
     AuthModule,
     ActivitiesModule,
     GymsModule,
+    MembersModule,
   ],
   controllers: [],
   providers: [],
