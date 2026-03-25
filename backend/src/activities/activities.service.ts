@@ -11,48 +11,51 @@ export class ActivitiesService {
         @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
     ) {}
 
-    async create(createActivityDto: CreateActivityDto): Promise<Activity> {
-        const createdActivity = new this.activityModel(createActivityDto);
+    async create(createActivityDto: CreateActivityDto, gymId: string): Promise<Activity> {
+        const createdActivity = new this.activityModel({
+            ...createActivityDto,
+            gymId,
+        });
         return createdActivity.save();
     }
 
-    async findAll(): Promise<Activity[]> {
-        return this.activityModel.find().populate('coach', 'firstName lastName email').exec();
+    async findAll(gymId: string): Promise<Activity[]> {
+        return this.activityModel.find({ gymId }).populate('coach', 'firstName lastName email').exec();
     }
 
-    async findByCoach(coachId: string): Promise<Activity[]> {
+    async findByCoach(coachId: string, gymId: string): Promise<Activity[]> {
         return this.activityModel
-            .find({ coach: coachId })
+            .find({ coach: coachId, gymId })
             .populate('coach', 'firstName lastName email')
             .exec();
     }
 
-    async findOne(id: string): Promise<Activity> {
+    async findOne(id: string, gymId: string): Promise<Activity> {
         const activity = await this.activityModel
-            .findById(id)
+            .findOne({ _id: id, gymId })
             .populate('coach', 'firstName lastName email')
             .exec();
         if (!activity) {
-            throw new NotFoundException(`Activity with ID "${id}" not found`);
+            throw new NotFoundException(`Activity with ID "${id}" not found in your gym`);
         }
         return activity;
     }
 
-    async update(id: string, updateActivityDto: UpdateActivityDto): Promise<Activity> {
+    async update(id: string, updateActivityDto: UpdateActivityDto, gymId: string): Promise<Activity> {
         const updatedActivity = await this.activityModel
-            .findByIdAndUpdate(id, updateActivityDto, { new: true })
+            .findOneAndUpdate({ _id: id, gymId }, updateActivityDto, { new: true })
             .populate('coach', 'firstName lastName email')
             .exec();
         if (!updatedActivity) {
-            throw new NotFoundException(`Activity with ID "${id}" not found`);
+            throw new NotFoundException(`Activity with ID "${id}" not found in your gym`);
         }
         return updatedActivity;
     }
 
-    async remove(id: string): Promise<Activity> {
-        const deletedActivity = await this.activityModel.findByIdAndDelete(id).exec();
+    async remove(id: string, gymId: string): Promise<Activity> {
+        const deletedActivity = await this.activityModel.findOneAndDelete({ _id: id, gymId }).exec();
         if (!deletedActivity) {
-            throw new NotFoundException(`Activity with ID "${id}" not found`);
+            throw new NotFoundException(`Activity with ID "${id}" not found in your gym`);
         }
         return deletedActivity;
     }
