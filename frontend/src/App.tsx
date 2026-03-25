@@ -3,6 +3,7 @@ import './App.css'
 import { AuthPage } from './pages/AuthPage'
 import { Dashboard } from './pages/Dashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { DashboardLayout } from './components/layout/DashboardLayout'
 
 function App() {
   return (
@@ -13,7 +14,9 @@ function App() {
 
       {/* protected routes */}
       <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
       </Route>
     </Routes>
   )
