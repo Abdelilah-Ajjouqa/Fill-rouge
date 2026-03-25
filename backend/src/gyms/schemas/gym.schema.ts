@@ -5,13 +5,13 @@ export type GymDocument = HydratedDocument<Gym>;
 
 @Schema({ timestamps: true })
 export class Gym {
-    @Prop({ required: true })
+    @Prop({ required: true, unique: true })
     name: string;
 
     @Prop({ required: true })
     address: string;
 
-    @Prop({ required: true })
+    @Prop({ required: true, unique: true })
     phone: string;
 
     @Prop()
