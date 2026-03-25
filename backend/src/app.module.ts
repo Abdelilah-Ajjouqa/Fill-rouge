@@ -8,6 +8,7 @@ import { GymsModule } from './gyms/gyms.module';
 import { MongodbConfig } from './config/Mongodb.config';
 import { MembersModule } from './members/members.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
     GymsModule,
     MembersModule,
     SubscriptionsModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
