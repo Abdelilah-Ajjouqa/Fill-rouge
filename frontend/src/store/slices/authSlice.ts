@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import axios from 'axios';
 import api from '../../api/axios';
 import type { User, AuthResponse } from '../../types/auth';
 
@@ -34,8 +35,11 @@ export const loginUser = createAsyncThunk<void, Record<string, string>, { reject
 
       // 3. Chain the /auth/me call to get the user's role and details
       await dispatch(fetchProfile());
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(error.response?.data?.message || 'Login failed');
+      }
+      return rejectWithValue('Login failed');
     }
   }
 );
@@ -47,7 +51,7 @@ export const fetchProfile = createAsyncThunk<User, void, { rejectValue: string }
     try {
       const response = await api.get<User>('/auth/me');
       return response.data;
-    } catch (error: any) {
+    } catch {
       return rejectWithValue('Failed to fetch profile');
     }
   }

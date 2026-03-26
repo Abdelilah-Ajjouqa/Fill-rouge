@@ -5,14 +5,21 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Member, MemberDocument } from './schema/member.schema';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { Activity, ActivityDocument } from '../activities/schemas/activity.schema';
-import { Subscription, SubscriptionDocument } from '../subscriptions/schemas/subscription.schema';
+import {
+  Activity,
+  ActivityDocument,
+} from '../activities/schemas/activity.schema';
+import {
+  Subscription,
+  SubscriptionDocument,
+} from '../subscriptions/schemas/subscription.schema';
 
 @Injectable()
 export class MembersService {
   constructor(
     @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
-    @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>,
+    @InjectModel(Subscription.name)
+    private subscriptionModel: Model<SubscriptionDocument>,
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
   ) {}
 
@@ -35,12 +42,15 @@ export class MembersService {
   async findByCoach(coachId: string, gymId: string) {
     // 1. Find all activities assigned to this coach in this gym
     const activities = await this.activityModel
-      .find({ coach: new Types.ObjectId(coachId), gymId: new Types.ObjectId(gymId) })
+      .find({
+        coach: new Types.ObjectId(coachId),
+        gymId: new Types.ObjectId(gymId),
+      })
       .exec();
 
     if (activities.length === 0) return [];
 
-    const activityIds = activities.map(a => a._id);
+    const activityIds = activities.map((a) => a._id);
 
     // 2. Find all active subscriptions for those activities
     const subscriptions = await this.subscriptionModel
@@ -48,7 +58,9 @@ export class MembersService {
       .exec();
 
     // 3. Extract unique member IDs
-    const memberIds = [...new Set(subscriptions.map(s => s.member.toString()))];
+    const memberIds = [
+      ...new Set(subscriptions.map((s) => s.member.toString())),
+    ];
 
     if (memberIds.length === 0) return [];
 
@@ -64,15 +76,23 @@ export class MembersService {
   }
 
   async findOne(id: string, gymId: string) {
-    const member = await this.memberModel.findOne({ _id: id, gymId }).select('-passwordHash').exec();
+    const member = await this.memberModel
+      .findOne({ _id: id, gymId })
+      .select('-passwordHash')
+      .exec();
     if (!member) {
-      throw new NotFoundException(`Member with ID "${id}" not found in your gym`);
+      throw new NotFoundException(
+        `Member with ID "${id}" not found in your gym`,
+      );
     }
     return member;
   }
 
   async findById(id: string) {
-    const member = await this.memberModel.findById(id).select('-passwordHash').exec();
+    const member = await this.memberModel
+      .findById(id)
+      .select('-passwordHash')
+      .exec();
     if (!member) {
       throw new NotFoundException(`Member not found`);
     }
@@ -93,16 +113,22 @@ export class MembersService {
       .exec();
 
     if (!updatedMember) {
-      throw new NotFoundException(`Member with ID "${id}" not found in your gym`);
+      throw new NotFoundException(
+        `Member with ID "${id}" not found in your gym`,
+      );
     }
 
     return updatedMember;
   }
 
   async remove(id: string, gymId: string) {
-    const deletedMember = await this.memberModel.findOneAndDelete({ _id: id, gymId }).exec();
+    const deletedMember = await this.memberModel
+      .findOneAndDelete({ _id: id, gymId })
+      .exec();
     if (!deletedMember) {
-      throw new NotFoundException(`Member with ID "${id}" not found in your gym`);
+      throw new NotFoundException(
+        `Member with ID "${id}" not found in your gym`,
+      );
     }
     return deletedMember;
   }
