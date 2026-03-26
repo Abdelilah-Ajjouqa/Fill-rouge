@@ -2,21 +2,21 @@ import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateGymDto {
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsString()
-    @IsNotEmpty()
-    address: string;
+  @IsString()
+  @IsNotEmpty()
+  address: string;
 
-    @IsString()
-    @IsNotEmpty()
-    phone: string;
+  @IsString()
+  @IsNotEmpty()
+  phone: string;
 
-    @IsString()
-    @IsOptional()
-    logo?: string;
+  @IsString()
+  @IsOptional()
+  logo?: string;
 
     @IsBoolean()
     @IsOptional()

@@ -25,7 +25,7 @@ const logoStorage = diskStorage({
 @Controller('gyms')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class GymsController {
-    constructor(private readonly gymsService: GymsService) {}
+  constructor(private readonly gymsService: GymsService) {}
 
     @Post()
     @Roles(UserRole.SUPER_ADMIN)
@@ -40,17 +40,17 @@ export class GymsController {
         return this.gymsService.create(createGymDto);
     }
 
-    @Get()
-    @Roles(UserRole.SUPER_ADMIN)
-    findAll() {
-        return this.gymsService.findAll();
-    }
+  @Get()
+  @Roles(UserRole.SUPER_ADMIN)
+  findAll() {
+    return this.gymsService.findAll();
+  }
 
-    @Get(':id')
-    @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-    findOne(@Param('id') id: string) {
-        return this.gymsService.findOne(id);
-    }
+  @Get(':id')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  findOne(@Param('id') id: string) {
+    return this.gymsService.findOne(id);
+  }
 
     @Patch(':id')
     @Roles(UserRole.SUPER_ADMIN)
@@ -66,9 +66,9 @@ export class GymsController {
         return this.gymsService.update(id, updateGymDto);
     }
 
-    @Delete(':id')
-    @Roles(UserRole.SUPER_ADMIN)
-    remove(@Param('id') id: string) {
-        return this.gymsService.remove(id);
-    }
+  @Delete(':id')
+  @Roles(UserRole.SUPER_ADMIN)
+  remove(@Param('id') id: string) {
+    return this.gymsService.remove(id);
+  }
 }

@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MembersService } from './members.service';
-import { MembersController } from './members.controller';
-import { Member, MemberSchema } from './schema/member.schema';
+import { SubscriptionsController } from './subscriptions.controller';
+import { SubscriptionsService } from './subscriptions.service';
 import {
   Subscription,
   SubscriptionSchema,
-} from '../subscriptions/schemas/subscription.schema';
+} from './schemas/subscription.schema';
 import {
   Activity,
   ActivitySchema,
@@ -15,13 +14,12 @@ import {
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Member.name, schema: MemberSchema },
       { name: Subscription.name, schema: SubscriptionSchema },
       { name: Activity.name, schema: ActivitySchema },
     ]),
   ],
-  controllers: [MembersController],
-  providers: [MembersService],
-  exports: [MembersService],
+  controllers: [SubscriptionsController],
+  providers: [SubscriptionsService],
+  exports: [SubscriptionsService],
 })
-export class MembersModule {}
+export class SubscriptionsModule {}

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { MembersService } from './members.service';
-import { MembersController } from './members.controller';
-import { Member, MemberSchema } from './schema/member.schema';
+import { PaymentsController } from './payments.controller';
+import { PaymentsService } from './payments.service';
+import { Payment, PaymentSchema } from './schemas/payment.schema';
 import {
   Subscription,
   SubscriptionSchema,
@@ -15,13 +15,13 @@ import {
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Member.name, schema: MemberSchema },
+      { name: Payment.name, schema: PaymentSchema },
       { name: Subscription.name, schema: SubscriptionSchema },
       { name: Activity.name, schema: ActivitySchema },
     ]),
   ],
-  controllers: [MembersController],
-  providers: [MembersService],
-  exports: [MembersService],
+  controllers: [PaymentsController],
+  providers: [PaymentsService],
+  exports: [PaymentsService],
 })
-export class MembersModule {}
+export class PaymentsModule {}
