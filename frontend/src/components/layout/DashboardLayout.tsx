@@ -1,11 +1,19 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Activity, LayoutGrid, Users, Calendar, BarChart3, ChevronDown, User } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Activity, LayoutGrid, Users, Calendar, BarChart3, ChevronDown, User, LogOut } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
+import { logout } from '../../store/slices/authSlice';
 
 export const DashboardLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
     const userRole = useSelector((state: RootState) => state.auth.user?.role) || 'MEMBER';
+
+    const handleLogout = () => {
+        dispatch(logout());
+        navigate('/login');
+    };
 
     // Role-based Nav
     let navItems = [
@@ -77,15 +85,24 @@ export const DashboardLayout = () => {
                 </nav>
 
                 <div className="p-4 border-t border-white/10">
-                    <div className="flex items-center gap-3 p-2">
-                        <div className="h-8 w-8 bg-white/10 flex items-center justify-center border border-white/20">
+                    <div className="flex items-center gap-3 p-2 mb-2">
+                        <div className="h-8 w-8 bg-white/10 flex items-center justify-center border border-white/20 shrink-0">
                             <User className="h-4 w-4 text-white/60" />
                         </div>
                         <div className="hidden lg:block overflow-hidden">
                             <p className="text-xs font-bold truncate">{getRoleName(userRole)}</p>
-                            <p className="text-[10px] text-white/40 uppercase">{userRole === 'SUPER_ADMIN' ? 'Root Access' : 'Active Account'}</p>
+                            <p className="text-[10px] text-white/40 uppercase truncate">{userRole === 'SUPER_ADMIN' ? 'Root Access' : 'Active Account'}</p>
                         </div>
                     </div>
+                    
+                    <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center justify-center lg:justify-start gap-4 p-2 mt-2 border border-transparent text-white/50 hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20 transition-all"
+                        title="Logout"
+                    >
+                        <LogOut className="h-5 w-5 shrink-0" />
+                        <span className="hidden lg:block font-medium">Logout</span>
+                    </button>
                 </div>
             </aside>
 

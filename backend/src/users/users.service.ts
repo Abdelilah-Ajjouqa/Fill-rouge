@@ -8,62 +8,65 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-    constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-    async create(createUserDto: CreateUserDto): Promise<User> {
-        const { password, ...rest } = createUserDto;
-        const passwordHash = await bcrypt.hash(password, 10);
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    const { password, ...rest } = createUserDto;
+    const passwordHash = await bcrypt.hash(password, 10);
 
-        const createdUser = new this.userModel({
-            ...rest,
-            passwordHash,
-        });
-        return createdUser.save();
+    const createdUser = new this.userModel({
+      ...rest,
+      passwordHash,
+    });
+    return createdUser.save();
+  }
+
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  async findOne(id: string): Promise<User | null> {
+    const user = await this.userModel
+      .findById(id)
+      .select('-passwordHash')
+      .exec();
+    if (!user) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    return user;
+  }
+
+  async findAll(gymId?: string): Promise<User[]> {
+    const filter = gymId ? { gymId } : {};
+    return this.userModel.find(filter).select('-passwordHash').exec();
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+    const { password, ...rest } = updateUserDto;
+
+    const updateData: any = { ...rest };
+
+    if (password) {
+      updateData.passwordHash = await bcrypt.hash(password, 10);
     }
 
-    async findByEmail(email: string): Promise<UserDocument | null> {
-        return this.userModel.findOne({ email }).exec();
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .select('-passwordHash')
+      .exec();
+
+    if (!updatedUser) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
     }
 
-    async findOne(id: string): Promise<User | null> {
-        const user = await this.userModel.findById(id).select('-passwordHash').exec();
-        if (!user) {
-            throw new NotFoundException(`User with ID "${id}" not found`);
-        }
-        return user;
+    return updatedUser;
+  }
+
+  async remove(id: string): Promise<User> {
+    const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
+    if (!deletedUser) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
     }
-
-    async findAll(gymId?: string): Promise<User[]> {
-        const filter = gymId ? { gymId } : {};
-        return this.userModel.find(filter).select('-passwordHash').exec();
-    }
-
-    async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
-        const { password, ...rest } = updateUserDto;
-
-        const updateData: any = { ...rest };
-
-        if (password) {
-            updateData.passwordHash = await bcrypt.hash(password, 10);
-        }
-
-        const updatedUser = await this.userModel
-            .findByIdAndUpdate(id, updateData, { new: true })
-            .select('-passwordHash')
-            .exec();
-
-        if (!updatedUser) {
-            throw new NotFoundException(`User with ID "${id}" not found`);
-        }
-
-        return updatedUser;
-    }
-
-    async remove(id: string): Promise<User> {
-        const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
-        if (!deletedUser) {
-            throw new NotFoundException(`User with ID "${id}" not found`);
-        }
-        return deletedUser;
-    }
+    return deletedUser;
+  }
 }
