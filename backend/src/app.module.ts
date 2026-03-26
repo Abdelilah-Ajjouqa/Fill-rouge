@@ -34,4 +34,4 @@ import { PaymentsModule } from './payments/payments.module';
   controllers: [],
   providers: [],
 })
-export class AppModule { }
+export class AppModule {}

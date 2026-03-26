@@ -1,38 +1,47 @@
-import { IsArray, IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsMongoId,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ScheduleSlotDto {
-    @IsString()
-    @IsNotEmpty()
-    day: string;
+  @IsString()
+  @IsNotEmpty()
+  day: string;
 
-    @IsString()
-    @IsNotEmpty()
-    startTime: string;
+  @IsString()
+  @IsNotEmpty()
+  startTime: string;
 
-    @IsString()
-    @IsNotEmpty()
-    endTime: string;
+  @IsString()
+  @IsNotEmpty()
+  endTime: string;
 }
 
 export class CreateActivityDto {
-    @IsString()
-    @IsNotEmpty()
-    name: string;
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-    @IsMongoId()
-    @IsNotEmpty()
-    coach: string;
+  @IsMongoId()
+  @IsNotEmpty()
+  coach: string;
 
-    @IsNumber()
-    @Min(0)
-    monthlyPrice: number;
+  @IsNumber()
+  @Min(0)
+  monthlyPrice: number;
 
-    @IsNumber()
-    @Min(1)
-    maxCapacity: number;
+  @IsNumber()
+  @Min(1)
+  maxCapacity: number;
 
-    @IsArray()
-    @IsOptional()
-    schedule?: ScheduleSlotDto[];
+  @IsArray()
+  @IsOptional()
+  schedule?: ScheduleSlotDto[];
 }
