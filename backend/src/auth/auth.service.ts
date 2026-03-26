@@ -18,14 +18,14 @@ export class AuthService {
     // First, try to find in Users collection (Super Admin, Admin, Coach)
     const user = await this.usersService.findByEmail(email);
     if (user && (await bcrypt.compare(pass, user.passwordHash))) {
-      const { passwordHash, ...result } = user.toObject();
+      const { passwordHash: _ph, ...result } = user.toObject();
       return { ...result, isMember: false };
     }
 
     // If not found, try the Members collection
     const member = await this.membersService.findByEmail(email);
     if (member && (await bcrypt.compare(pass, member.passwordHash))) {
-      const { passwordHash, ...result } = member.toObject();
+      const { passwordHash: _ph, ...result } = member.toObject();
       return { ...result, isMember: true };
     }
 
@@ -46,7 +46,7 @@ export class AuthService {
     };
 
     // Remove the helper flag before sending to client
-    const { isMember, ...userData } = user;
+    const { isMember: _isMember, ...userData } = user;
 
     return {
       access_token: this.jwtService.sign(payload),

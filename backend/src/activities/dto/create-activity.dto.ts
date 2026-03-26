@@ -43,5 +43,7 @@ export class CreateActivityDto {
 
   @IsArray()
   @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => ScheduleSlotDto)
   schedule?: ScheduleSlotDto[];
 }
