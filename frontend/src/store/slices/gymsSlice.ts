@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import axios from 'axios';
 import api from '../../api/axios';
 import type { Gym } from '../../types/models';
 
@@ -21,8 +22,11 @@ export const fetchGyms = createAsyncThunk<Gym[], void, { rejectValue: string }>(
     try {
       const response = await api.get<Gym[]>('/gyms');
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch gyms');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to fetch gyms');
+      }
+      return rejectWithValue('Failed to fetch gyms');
     }
   }
 );
@@ -34,8 +38,11 @@ export const createGym = createAsyncThunk<Gym, Partial<Gym>, { rejectValue: stri
     try {
       const response = await api.post<Gym>('/gyms', gymData);
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create gym');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to create gym');
+      }
+      return rejectWithValue('Failed to create gym');
     }
   }
 );
