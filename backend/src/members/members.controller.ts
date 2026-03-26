@@ -21,6 +21,10 @@ export class MembersController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.COACH)
   findAll(@Request() req: any) {
+    if (req.user.role === UserRole.COACH) {
+      return this.membersService.findByCoach(req.user.userId, req.user.gymId);
+    }
+    // Admin sees all members in their gym
     return this.membersService.findAll(req.user.gymId);
   }
 
@@ -39,7 +43,7 @@ export class MembersController {
   @Delete(':id')
   @Roles(UserRole.ADMIN)
   remove(@Request() req: any, @Param('id') id: string) {
-    // Only Admin can delete members, per the README
+    // Only Admin can delete members
     return this.membersService.remove(id, req.user.gymId);
   }
 }
