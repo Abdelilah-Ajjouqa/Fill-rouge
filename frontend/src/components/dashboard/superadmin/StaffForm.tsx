@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
-import { createStaff, type StaffRole } from '../../store/slices/staffSlice';
-import type { AppDispatch, RootState } from '../../store/store';
+import { createStaff, type StaffRole } from '../../../store/slices/staffSlice';
+import type { AppDispatch, RootState } from '../../../store/store';
 
 interface StaffFormProps {
     gymId: string;

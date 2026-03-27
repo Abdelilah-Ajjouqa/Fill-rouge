@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteGym, fetchGyms } from '../../store/slices/gymsSlice';
+import { deleteGym, fetchGyms } from '../../../store/slices/gymsSlice';
 import { PlusSquare } from 'lucide-react';
-import type { AppDispatch, RootState } from '../../store/store';
-import type { Gym } from '../../types/models';
-import { clearStaff, fetchStaffByGym, updateStaff, type StaffRole, type StaffUser } from '../../store/slices/staffSlice';
+import type { AppDispatch, RootState } from '../../../store/store';
+import type { Gym } from '../../../types/models';
+import { clearStaff, fetchStaffByGym, updateStaff, type StaffRole, type StaffUser } from '../../../store/slices/staffSlice';
 import { toast } from 'sonner';
 import { GymCard } from './GymCard';
 import { GymEditorModal } from './GymEditorModal';
