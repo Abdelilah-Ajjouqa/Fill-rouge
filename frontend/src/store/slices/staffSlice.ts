@@ -47,11 +47,17 @@ export const fetchStaffByGym = createAsyncThunk<
     { rejectValue: string }
 >('staff/fetchStaffByGym', async (gymId, { rejectWithValue }) => {
     try {
-        const response = await api.get<StaffUser[]>(`/users?gymId=${gymId}`);
+        const response = await api.get<StaffUser[]>(`/users?gymId=${encodeURIComponent(gymId)}`);
 
-        // Keep this slice strictly staff-focused.
+        // Keep this slice strictly staff-focused and gym-scoped.
         return response.data.filter(
-            (user) => user.role === 'ADMIN' || user.role === 'COACH',
+            (user) => {
+                const roleAllowed = user.role === 'ADMIN' || user.role === 'COACH';
+                const gymRef = user.gymId as unknown as string | { _id?: string } | null;
+                const userGymId = typeof gymRef === 'string' ? gymRef : gymRef?._id ?? null;
+
+                return roleAllowed && userGymId === gymId;
+            },
         );
     } catch (error) {
         if (axios.isAxiosError(error)) {
