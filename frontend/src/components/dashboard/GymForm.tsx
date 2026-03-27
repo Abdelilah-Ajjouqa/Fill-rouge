@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { createGym, clearGymsError, updateGym } from '../../store/slices/gymsSlice';
 import type { AppDispatch, RootState } from '../../store/store';
 import { Upload, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface GymFormProps {
     gym?: any;
@@ -41,14 +42,26 @@ export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
         if (gym) {
             const resultAction = await dispatch(updateGym({ id: gym._id, formData }));
             if (updateGym.fulfilled.match(resultAction)) {
+                toast.success('Gym updated successfully');
                 onSuccess();
+            } else {
+                const message = typeof resultAction.payload === 'string'
+                    ? resultAction.payload
+                    : 'Failed to update gym';
+                toast.error(message);
             }
             return;
         }
 
         const resultAction = await dispatch(createGym(formData));
         if (createGym.fulfilled.match(resultAction)) {
+            toast.success('Gym created successfully');
             onSuccess();
+        } else {
+            const message = typeof resultAction.payload === 'string'
+                ? resultAction.payload
+                : 'Failed to create gym';
+            toast.error(message);
         }
     };
 
