@@ -3,8 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchGyms } from '../../store/slices/gymsSlice';
 import { Flame, PlusSquare, MapPin, Phone } from 'lucide-react';
 import { GymForm } from './GymForm';
-import type { AppDispatch } from '../../store/store';
-import type { RootState } from '../../store/store';
+import type { AppDispatch, RootState } from '../../store/store';
 
 export const SuperAdminDashboard = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -42,7 +41,7 @@ export const SuperAdminDashboard = () => {
                         <p className="font-mono text-[10px] uppercase tracking-widest">Fetching Gyms...</p>
                     </div>
                 ) : (
-                    gyms.map((gym, index) => (
+                    gyms.map((gym: any, index: any) => (
                         <article 
                             key={gym._id} 
                             className="bg-slate-900 border border-white/10 p-6 flex flex-col justify-between group hover:border-brand/40 transition-colors animate-fade-in" 
