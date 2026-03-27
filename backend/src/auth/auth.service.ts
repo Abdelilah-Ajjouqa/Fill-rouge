@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { ActingUser } from 'types';
 
 @Injectable()
 export class AuthService {
@@ -15,7 +16,7 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
-    // First, try to find in Users collection (Super Admin, Admin, Coach)
+    // Try to find in Users collection (Super Admin, Admin, Coach)
     const user = await this.usersService.findByEmail(email);
     if (user && (await bcrypt.compare(pass, user.passwordHash))) {
       const { passwordHash: _ph, ...result } = user.toObject();
@@ -54,8 +55,8 @@ export class AuthService {
     };
   }
 
-  async register(registrationData: CreateUserDto) {
-    return this.usersService.create(registrationData);
+  async register(registrationData: CreateUserDto, actingUser?: ActingUser) {
+    return this.usersService.create(registrationData, actingUser);
   }
 
   async getProfile(userId: string, role: string) {
