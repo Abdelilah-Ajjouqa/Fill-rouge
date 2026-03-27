@@ -47,12 +47,46 @@ export const SuperAdminDashboard = () => {
         dispatch(clearStaff());
     };
 
+    const mapStaffErrorMessage = (message: string) => {
+        if (message === 'This gym already has an ADMIN') {
+            return 'This gym already has one admin. Replace the current admin first.';
+        }
+
+        return message;
+    };
+
     const handleRoleChange = async (
         memberId: string,
         currentRole: StaffRole,
         nextRole: StaffRole,
     ) => {
         if (currentRole === nextRole) return;
+
+        if (nextRole === 'ADMIN') {
+            const currentAdmin = staff.find((member) => member.role === 'ADMIN');
+
+            if (currentAdmin && currentAdmin._id !== memberId) {
+                const confirmed = window.confirm(
+                    `This gym already has ADMIN (${currentAdmin.firstName} ${currentAdmin.lastName}). Replace with selected staff member?`,
+                );
+
+                if (!confirmed) {
+                    return;
+                }
+
+                const demoteAction = await dispatch(
+                    updateStaff({ id: currentAdmin._id, role: 'COACH' }),
+                );
+
+                if (!updateStaff.fulfilled.match(demoteAction)) {
+                    const demoteMessage = typeof demoteAction.payload === 'string'
+                        ? demoteAction.payload
+                        : 'Failed to demote current admin';
+                    toast.error(mapStaffErrorMessage(demoteMessage));
+                    return;
+                }
+            }
+        }
 
         const resultAction = await dispatch(updateStaff({ id: memberId, role: nextRole }));
 
@@ -64,7 +98,7 @@ export const SuperAdminDashboard = () => {
         const message = typeof resultAction.payload === 'string'
             ? resultAction.payload
             : 'Failed to update role';
-        toast.error(message);
+        toast.error(mapStaffErrorMessage(message));
     };
 
     const handleStatusToggle = async (member: StaffUser) => {
@@ -91,7 +125,7 @@ export const SuperAdminDashboard = () => {
         const message = typeof resultAction.payload === 'string'
             ? resultAction.payload
             : 'Failed to update staff status';
-        toast.error(message);
+        toast.error(mapStaffErrorMessage(message));
     };
 
     return (

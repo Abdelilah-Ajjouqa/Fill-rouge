@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { createStaff, type StaffRole } from '../../../store/slices/staffSlice';
@@ -11,7 +11,7 @@ interface StaffFormProps {
 
 export const StaffForm = ({ gymId, onCreated }: StaffFormProps) => {
     const dispatch = useDispatch<AppDispatch>();
-    const { isCreating, error } = useSelector((state: RootState) => state.staff);
+    const { isCreating, error, staff } = useSelector((state: RootState) => state.staff);
 
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
@@ -19,11 +19,32 @@ export const StaffForm = ({ gymId, onCreated }: StaffFormProps) => {
     const [password, setPassword] = useState('');
     const [role, setRole] = useState<StaffRole>('ADMIN');
 
+    const hasAdmin = staff.some((member) => member.role === 'ADMIN');
+
+    const mapStaffErrorMessage = (message: string) => {
+        if (message === 'This gym already has an ADMIN') {
+            return 'This gym already has one admin. Choose COACH or replace the current admin.';
+        }
+
+        return message;
+    };
+
+    useEffect(() => {
+        if (hasAdmin && role === 'ADMIN') {
+            setRole('COACH');
+        }
+    }, [hasAdmin, role]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (role !== 'ADMIN' && role !== 'COACH') {
             toast.error('Only ADMIN or COACH can be created in this form');
+            return;
+        }
+
+        if (role === 'ADMIN' && hasAdmin) {
+            toast.error('This gym already has one admin. Create a coach or replace the current admin.');
             return;
         }
 
@@ -53,7 +74,7 @@ export const StaffForm = ({ gymId, onCreated }: StaffFormProps) => {
             typeof resultAction.payload === 'string'
                 ? resultAction.payload
                 : 'Failed to create staff';
-        toast.error(message);
+        toast.error(mapStaffErrorMessage(message));
     };
 
     return (
@@ -133,11 +154,13 @@ export const StaffForm = ({ gymId, onCreated }: StaffFormProps) => {
                         onChange={(e) => setRole(e.target.value as StaffRole)}
                         className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
                     >
-                        <option value="ADMIN">ADMIN</option>
+                        <option value="ADMIN" disabled={hasAdmin}>ADMIN</option>
                         <option value="COACH">COACH</option>
                     </select>
                     <p className="text-[10px] text-white/30 mt-1 uppercase tracking-widest">
-                        Super Admin can create only ADMIN or COACH in this flow.
+                        {hasAdmin
+                            ? 'This gym already has one ADMIN. Create COACH or replace admin from the staff list.'
+                            : 'Super Admin can create only ADMIN or COACH in this flow.'}
                     </p>
                 </div>
             </div>

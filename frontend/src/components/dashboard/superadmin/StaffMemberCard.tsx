@@ -4,6 +4,7 @@ import type { StaffRole, StaffUser } from '../../../store/slices/staffSlice';
 interface StaffMemberCardProps {
     member: StaffUser;
     isUpdating: boolean;
+    disableAdminOption?: boolean;
     onRoleChange: (memberId: string, currentRole: StaffRole, nextRole: StaffRole) => void;
     onStatusToggle: (member: StaffUser) => void;
 }
@@ -11,6 +12,7 @@ interface StaffMemberCardProps {
 export const StaffMemberCard = ({
     member,
     isUpdating,
+    disableAdminOption = false,
     onRoleChange,
     onStatusToggle,
 }: StaffMemberCardProps) => {
@@ -45,7 +47,7 @@ export const StaffMemberCard = ({
                             disabled={isUpdating}
                             className="w-full bg-slate-950 border border-white/10 pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-brand transition-colors disabled:opacity-50"
                         >
-                            <option value="ADMIN">ADMIN</option>
+                            <option value="ADMIN" disabled={disableAdminOption}>ADMIN</option>
                             <option value="COACH">COACH</option>
                         </select>
                     </div>

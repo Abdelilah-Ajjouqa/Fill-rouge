@@ -32,6 +32,8 @@ export const StaffManagementModal = ({
         return null;
     }
 
+    const currentAdmin = staff.find((member) => member.role === 'ADMIN');
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-3xl w-full relative animate-fade-in max-h-[90vh] overflow-y-auto">
@@ -80,6 +82,7 @@ export const StaffManagementModal = ({
                                         key={member._id}
                                         member={member}
                                         isUpdating={updatingIds.includes(member._id)}
+                                        disableAdminOption={!!currentAdmin && currentAdmin._id !== member._id}
                                         onRoleChange={onRoleChange}
                                         onStatusToggle={onStatusToggle}
                                     />
