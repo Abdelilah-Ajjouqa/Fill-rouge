@@ -4,21 +4,36 @@ import { AuthPage } from './pages/AuthPage'
 import { Dashboard } from './pages/Dashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { DashboardLayout } from './components/layout/DashboardLayout'
+import { Toaster } from 'sonner'
 
 function App() {
   return (
-    <Routes>
-      {/* public routes */}
-      <Route path="/" element={<AuthPage />} />
+    <>
+      <Routes>
+        {/* public routes */}
+        <Route path="/" element={<AuthPage />} />
 
 
-      {/* protected routes */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<DashboardLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+        {/* protected routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+
+      <Toaster
+        richColors
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#0f172a',
+            border: '1px solid rgba(255,255,255,0.12)',
+            color: '#f8fafc',
+          },
+        }}
+      />
+    </>
   )
 }
 
