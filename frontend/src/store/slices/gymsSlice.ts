@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import api from '../../api/axios';
 import type { Gym } from '../../types/models';
@@ -49,6 +49,33 @@ export const createGym = createAsyncThunk<Gym, FormData, { rejectValue: string }
   }
 );
 
+// Thunk for Deleting a Gym
+export const deleteGym = createAsyncThunk(
+  'gyms/deleteGym',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await api.delete(`/gyms/${id}`);
+      return id; // Return the ID so we can remove it from the state
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to delete gym');
+    }
+  }
+);
+
+// Thunk for Updating a Gym
+export const updateGym = createAsyncThunk(
+  'gyms/updateGym',
+  async ({ id, formData }: { id: string; formData: FormData }, { rejectWithValue }) => {
+    try {
+      // Remember: We use PATCH for partial updates
+      const response = await api.patch(`/gyms/${id}`, formData);
+      return response.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || 'Failed to update gym');
+    }
+  }
+);
+
 const gymsSlice = createSlice({
   name: 'gyms',
   initialState,
@@ -84,6 +111,19 @@ const gymsSlice = createSlice({
     builder.addCase(createGym.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload as string;
+    });
+
+    // Delete Gym
+    builder.addCase(deleteGym.fulfilled, (state, action: PayloadAction<string>) => {
+      state.gyms = state.gyms.filter(gym => gym._id !== action.payload);
+    });
+
+    // Update Gym
+    builder.addCase(updateGym.fulfilled, (state, action: PayloadAction<any>) => {
+      const index = state.gyms.findIndex(gym => gym._id === action.payload._id);
+      if (index !== -1) {
+        state.gyms[index] = action.payload;
+      }
     });
   },
 });
