@@ -32,11 +32,13 @@ export const fetchGyms = createAsyncThunk<Gym[], void, { rejectValue: string }>(
 );
 
 // Thunk to create a new gym (Super Admin)
-export const createGym = createAsyncThunk<Gym, Partial<Gym>, { rejectValue: string }>(
+export const createGym = createAsyncThunk<Gym, FormData, { rejectValue: string }>(
   'gyms/createGym',
-  async (gymData, { rejectWithValue }) => {
+  async (formData, { rejectWithValue }) => {
     try {
-      const response = await api.post<Gym>('/gyms', gymData);
+      const response = await api.post<Gym>('/gyms', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
       return response.data;
     } catch (error) {
       if (axios.isAxiosError(error)) {

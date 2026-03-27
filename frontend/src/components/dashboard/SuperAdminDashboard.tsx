@@ -52,7 +52,7 @@ export const SuperAdminDashboard = () => {
                                     <h3 className="text-xl font-bold tracking-tight truncate pr-4" title={gym.name}>{gym.name}</h3>
                                     <span className="bg-white/5 p-2 border border-white/10 text-brand shrink-0">
                                         {gym.logo ? (
-                                            <img src={gym.logo} alt="Logo" className="h-5 w-5 object-cover" />
+                                            <img src={`http://localhost:3000${gym.logo}`} alt="Logo" className="h-5 w-5 object-cover" />
                                         ) : (
                                             <Flame className="h-5 w-5" />
                                         )}
