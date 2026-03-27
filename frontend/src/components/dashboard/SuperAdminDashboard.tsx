@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteGym, fetchGyms } from '../../store/slices/gymsSlice';
-import { Flame, PlusSquare, MapPin, Phone, Edit2, Trash2 } from 'lucide-react';
+import { Flame, PlusSquare, MapPin, Phone, Edit2, Trash2, Power, UserCog } from 'lucide-react';
 import { GymForm } from './GymForm';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { Gym } from '../../types/models';
-import { clearStaff, fetchStaffByGym } from '../../store/slices/staffSlice';
+import { clearStaff, fetchStaffByGym, updateStaff, type StaffRole } from '../../store/slices/staffSlice';
 import { StaffForm } from './StaffForm';
+import { toast } from 'sonner';
 
 export const SuperAdminDashboard = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -15,6 +16,7 @@ export const SuperAdminDashboard = () => {
         staff,
         isLoading: isStaffLoading,
         error: staffError,
+        updatingIds,
     } = useSelector((state: RootState) => state.staff);
 
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -42,6 +44,53 @@ export const SuperAdminDashboard = () => {
         setIsStaffModalOpen(false);
         setSelectedGym(null);
         dispatch(clearStaff());
+    };
+
+    const handleRoleChange = async (
+        memberId: string,
+        currentRole: StaffRole,
+        nextRole: StaffRole,
+    ) => {
+        if (currentRole === nextRole) return;
+
+        const resultAction = await dispatch(updateStaff({ id: memberId, role: nextRole }));
+
+        if (updateStaff.fulfilled.match(resultAction)) {
+            toast.success(`Role updated to ${nextRole}`);
+            return;
+        }
+
+        const message = typeof resultAction.payload === 'string'
+            ? resultAction.payload
+            : 'Failed to update role';
+        toast.error(message);
+    };
+
+    const handleStatusToggle = async (member: { _id: string; firstName: string; lastName: string; isActive?: boolean }) => {
+        const isCurrentlyActive = member.isActive !== false;
+
+        if (isCurrentlyActive) {
+            const confirmed = window.confirm(
+                `Are you sure you want to deactivate ${member.firstName} ${member.lastName}?`,
+            );
+            if (!confirmed) return;
+        }
+
+        const resultAction = await dispatch(
+            updateStaff({ id: member._id, isActive: !isCurrentlyActive }),
+        );
+
+        if (updateStaff.fulfilled.match(resultAction)) {
+            toast.success(
+                !isCurrentlyActive ? 'Staff member activated successfully' : 'Staff member deactivated successfully',
+            );
+            return;
+        }
+
+        const message = typeof resultAction.payload === 'string'
+            ? resultAction.payload
+            : 'Failed to update staff status';
+        toast.error(message);
     };
 
     return (
@@ -241,10 +290,7 @@ export const SuperAdminDashboard = () => {
                                 ) : (
                                     <div className="space-y-3">
                                         {staff.map((member) => (
-                                            <div
-                                                key={member._id}
-                                                className="border border-white/10 bg-slate-950 p-3"
-                                            >
+                                            <div key={member._id} className="border border-white/10 bg-slate-950 p-3">
                                                 <div className="flex items-center justify-between gap-3">
                                                     <div>
                                                         <p className="text-sm font-semibold text-white">
@@ -252,9 +298,54 @@ export const SuperAdminDashboard = () => {
                                                         </p>
                                                         <p className="text-xs text-white/50">{member.email}</p>
                                                     </div>
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-brand bg-brand/10 border border-brand/30 px-2 py-1">
-                                                        {member.role}
+                                                    <span
+                                                        className={`text-[10px] font-bold uppercase tracking-widest border px-2 py-1 ${member.isActive === false
+                                                            ? 'text-red-300 bg-red-500/10 border-red-500/30'
+                                                            : 'text-brand bg-brand/10 border-brand/30'}`}
+                                                    >
+                                                        {member.isActive === false ? 'INACTIVE' : 'ACTIVE'}
                                                     </span>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4 pt-3 border-t border-white/5">
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                                            Role
+                                                        </label>
+                                                        <div className="relative">
+                                                            <UserCog className="h-4 w-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                                                            <select
+                                                                value={member.role}
+                                                                onChange={(e) => handleRoleChange(
+                                                                    member._id,
+                                                                    member.role,
+                                                                    e.target.value as StaffRole,
+                                                                )}
+                                                                disabled={updatingIds.includes(member._id)}
+                                                                className="w-full bg-slate-950 border border-white/10 pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-brand transition-colors disabled:opacity-50"
+                                                            >
+                                                                <option value="ADMIN">ADMIN</option>
+                                                                <option value="COACH">COACH</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                                            Status
+                                                        </label>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleStatusToggle(member)}
+                                                            disabled={updatingIds.includes(member._id)}
+                                                            className={`w-full flex items-center justify-center gap-2 border py-2 text-xs font-bold uppercase tracking-widest transition-colors disabled:opacity-50 ${member.isActive === false
+                                                                ? 'border-brand/40 text-brand hover:bg-brand/10'
+                                                                : 'border-red-500/40 text-red-300 hover:bg-red-500/10'}`}
+                                                        >
+                                                            <Power className="h-3.5 w-3.5" />
+                                                            {member.isActive === false ? 'Activate' : 'Deactivate'}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}

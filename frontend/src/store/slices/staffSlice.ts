@@ -25,11 +25,18 @@ export interface CreateStaffPayload {
     lastName: string;
 }
 
+export interface UpdateStaffPayload {
+    id: string;
+    role?: StaffRole;
+    isActive?: boolean;
+}
+
 interface StaffState {
     staff: StaffUser[];
     activeGymId: string | null;
     isLoading: boolean;
     isCreating: boolean;
+    updatingIds: string[];
     error: string | null;
 }
 
@@ -38,6 +45,7 @@ const initialState: StaffState = {
     activeGymId: null,
     isLoading: false,
     isCreating: false,
+    updatingIds: [],
     error: null,
 };
 
@@ -87,6 +95,26 @@ export const createStaff = createAsyncThunk<
     }
 });
 
+export const updateStaff = createAsyncThunk<
+    StaffUser,
+    UpdateStaffPayload,
+    { rejectValue: string }
+>('staff/updateStaff', async ({ id, ...data }, { rejectWithValue }) => {
+    try {
+        if (data.role && data.role !== 'ADMIN' && data.role !== 'COACH') {
+            return rejectWithValue('Role must be ADMIN or COACH');
+        }
+
+        const response = await api.patch<StaffUser>(`/users/${id}`, data);
+        return response.data;
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to update staff');
+        }
+        return rejectWithValue('Failed to update staff');
+    }
+});
+
 const staffSlice = createSlice({
     name: 'staff',
     initialState,
@@ -97,6 +125,7 @@ const staffSlice = createSlice({
             state.error = null;
             state.isLoading = false;
             state.isCreating = false;
+            state.updatingIds = [];
         },
     },
     extraReducers: (builder) => {
@@ -128,6 +157,25 @@ const staffSlice = createSlice({
         });
         builder.addCase(createStaff.rejected, (state, action) => {
             state.isCreating = false;
+            state.error = action.payload as string;
+        });
+
+        builder.addCase(updateStaff.pending, (state, action) => {
+            state.error = null;
+            if (!state.updatingIds.includes(action.meta.arg.id)) {
+                state.updatingIds.push(action.meta.arg.id);
+            }
+        });
+        builder.addCase(updateStaff.fulfilled, (state, action) => {
+            state.updatingIds = state.updatingIds.filter((id) => id !== action.payload._id);
+
+            const index = state.staff.findIndex((member) => member._id === action.payload._id);
+            if (index !== -1) {
+                state.staff[index] = action.payload;
+            }
+        });
+        builder.addCase(updateStaff.rejected, (state, action) => {
+            state.updatingIds = state.updatingIds.filter((id) => id !== action.meta.arg.id);
             state.error = action.payload as string;
         });
     },
