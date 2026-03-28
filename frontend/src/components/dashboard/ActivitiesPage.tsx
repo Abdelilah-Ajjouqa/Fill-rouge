@@ -1,0 +1,495 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useSelector } from 'react-redux';
+import axios from 'axios';
+import { Edit2, Plus, Users, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
+import api from '../../api/axios';
+import type { RootState } from '../../store/store';
+import type { Activity, Gym, Hall } from '../../types/models';
+import type { User } from '../../types/auth';
+
+type ActivityModalProps = {
+    isOpen: boolean;
+    activity: Activity | null;
+    halls: Hall[];
+    coaches: User[];
+    onClose: () => void;
+    onSaved: () => void;
+};
+
+const resolveCoachId = (activity: Activity | null) => {
+    if (!activity) {
+        return '';
+    }
+
+    if (typeof activity.coach === 'string') {
+        return activity.coach;
+    }
+
+    return activity.coach?._id || '';
+};
+
+const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: ActivityModalProps) => {
+    const [name, setName] = useState('');
+    const [coachId, setCoachId] = useState('');
+    const [hallId, setHallId] = useState('');
+    const [monthlyPrice, setMonthlyPrice] = useState(0);
+    const [maxCapacity, setMaxCapacity] = useState(1);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        const defaultHallId = activity?.hallId || halls[0]?._id || '';
+        const defaultCoachId = resolveCoachId(activity) || coaches[0]?._id || '';
+
+        setName(activity?.name || '');
+        setCoachId(defaultCoachId);
+        setHallId(defaultHallId);
+        setMonthlyPrice(activity?.monthlyPrice ?? 0);
+        setMaxCapacity(activity?.maxCapacity ?? Math.max(1, halls[0]?.capacity ?? 1));
+    }, [activity, halls, coaches, isOpen]);
+
+    if (!isOpen) {
+        return null;
+    }
+
+    const selectedHall = halls.find((hall) => hall._id === hallId);
+    const effectiveCapacity = selectedHall
+        ? Math.min(Number(maxCapacity) || 0, selectedHall.capacity)
+        : Number(maxCapacity) || 0;
+
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+
+        if (!name.trim() || !coachId || !hallId) {
+            toast.error('Please fill all required fields.');
+            return;
+        }
+
+        const priceValue = Number(monthlyPrice);
+        const capacityValue = Number(maxCapacity);
+
+        if (!Number.isFinite(priceValue) || priceValue < 0) {
+            toast.error('Monthly price must be 0 or higher.');
+            return;
+        }
+
+        if (!Number.isFinite(capacityValue) || capacityValue < 1) {
+            toast.error('Max capacity must be at least 1.');
+            return;
+        }
+
+        const payload = {
+            name: name.trim(),
+            coach: coachId,
+            hallId,
+            monthlyPrice: priceValue,
+            maxCapacity: capacityValue,
+        };
+
+        setIsSaving(true);
+
+        try {
+            if (activity) {
+                await api.patch(`/activities/${activity._id}`, payload);
+                toast.success('Activity updated successfully.');
+            } else {
+                await api.post('/activities', payload);
+                toast.success('Activity created successfully.');
+            }
+            onSaved();
+        } catch (error) {
+            let message = 'Failed to save activity.';
+            if (axios.isAxiosError(error)) {
+                message = error.response?.data?.message || message;
+            }
+            toast.error(message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const hasHalls = halls.length > 0;
+    const hasCoaches = coaches.length > 0;
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-lg w-full relative animate-fade-in">
+                <div className="flex items-start justify-between mb-6">
+                    <div>
+                        <h3 className="text-xl font-bold">{activity ? 'Edit Activity' : 'Create Activity'}</h3>
+                        <p className="text-white/60 text-sm mt-1">Assign a hall and coach to the activity.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-white/50 hover:text-white transition-colors"
+                        aria-label="Close"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                {!hasHalls && (
+                    <div className="mb-4 p-3 border border-dashed border-white/10 text-white/50 text-xs">
+                        No halls found for this gym. Ask the Super Admin to add halls before creating activities.
+                    </div>
+                )}
+
+                {!hasCoaches && (
+                    <div className="mb-4 p-3 border border-dashed border-white/10 text-white/50 text-xs">
+                        No coaches found. Create a coach before assigning an activity.
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                            Activity Name *
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
+                            placeholder="e.g. CrossFit Basics"
+                            required
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                Hall *
+                            </label>
+                            <select
+                                value={hallId}
+                                onChange={(event) => setHallId(event.target.value)}
+                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                required
+                                disabled={!hasHalls}
+                            >
+                                <option value="">Select a hall</option>
+                                {halls.map((hall) => (
+                                    <option key={hall._id || hall.name} value={hall._id}>
+                                        {hall.name} · {hall.type} ({hall.capacity})
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-[10px] text-white/40 mt-1">
+                                Hall capacity: {selectedHall ? selectedHall.capacity : 'N/A'}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                Coach *
+                            </label>
+                            <select
+                                value={coachId}
+                                onChange={(event) => setCoachId(event.target.value)}
+                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                required
+                                disabled={!hasCoaches}
+                            >
+                                <option value="">Select a coach</option>
+                                {coaches.map((coach) => (
+                                    <option key={coach._id} value={coach._id}>
+                                        {coach.firstName} {coach.lastName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                Monthly Price (DH) *
+                            </label>
+                            <input
+                                type="number"
+                                min={0}
+                                value={monthlyPrice}
+                                onChange={(event) => setMonthlyPrice(Number(event.target.value))}
+                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                Max Capacity *
+                            </label>
+                            <input
+                                type="number"
+                                min={1}
+                                value={maxCapacity}
+                                onChange={(event) => setMaxCapacity(Number(event.target.value))}
+                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                required
+                            />
+                            <p className="text-[10px] text-white/40 mt-1">
+                                Effective capacity: {effectiveCapacity}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4 border-t border-white/5">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 bg-white/5 text-white/60 py-3 text-xs font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSaving || !hasHalls || !hasCoaches}
+                            className="flex-1 bg-brand text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50"
+                        >
+                            {isSaving ? 'Saving...' : activity ? 'Update Activity' : 'Create Activity'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export const ActivitiesPage = () => {
+    const user = useSelector((state: RootState) => state.auth.user);
+    const isAdmin = user?.role === 'ADMIN';
+    const isCoach = user?.role === 'COACH';
+
+    const [activities, setActivities] = useState<Activity[]>([]);
+    const [coaches, setCoaches] = useState<User[]>([]);
+    const [halls, setHalls] = useState<Hall[]>([]);
+    const [gymName, setGymName] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+
+    const hallLookup = useMemo(() => {
+        const map = new Map<string, Hall>();
+        halls.forEach((hall) => {
+            if (hall._id) {
+                map.set(hall._id, hall);
+            }
+        });
+        return map;
+    }, [halls]);
+
+    const coachLookup = useMemo(() => {
+        const map = new Map<string, User>();
+        coaches.forEach((coach) => {
+            map.set(coach._id, coach);
+        });
+        return map;
+    }, [coaches]);
+
+    const loadActivities = async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const activityResponse = await api.get<Activity[]>('/activities');
+            setActivities(activityResponse.data);
+
+            if (isAdmin && user?.gymId) {
+                const gymResponse = await api.get<Gym>(`/gyms/${user.gymId}`);
+                setGymName(gymResponse.data.name);
+                setHalls(gymResponse.data.halls ?? []);
+
+                const usersResponse = await api.get<User[]>('/users');
+                const coachList = usersResponse.data.filter((entry) => entry.role === 'COACH');
+                setCoaches(coachList);
+            }
+        } catch (fetchError) {
+            let message = 'Failed to load activities.';
+            if (axios.isAxiosError(fetchError)) {
+                message = fetchError.response?.data?.message || message;
+            }
+            setError(message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!user || (!isAdmin && !isCoach)) {
+            return;
+        }
+        loadActivities();
+    }, [user, isAdmin, isCoach]);
+
+    if (!user) {
+        return (
+            <div className="p-8">
+                <p className="text-white/60">Loading profile...</p>
+            </div>
+        );
+    }
+
+    if (!isAdmin && !isCoach) {
+        return (
+            <div className="p-8">
+                <div className="bg-slate-900 border border-white/10 p-6">
+                    <h2 className="text-lg font-bold">Activities</h2>
+                    <p className="text-white/40 text-sm mt-2">This section is available for gym admins and coaches.</p>
+                </div>
+            </div>
+        );
+    }
+
+    const handleOpenCreate = () => {
+        setSelectedActivity(null);
+        setIsModalOpen(true);
+    };
+
+    const handleOpenEdit = (activity: Activity) => {
+        setSelectedActivity(activity);
+        setIsModalOpen(true);
+    };
+
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setSelectedActivity(null);
+    };
+
+    const handleSaved = () => {
+        handleModalClose();
+        loadActivities();
+    };
+
+    return (
+        <div className="p-8 space-y-8 animate-fade-in">
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Activities</h2>
+                    <p className="text-white/40 text-sm mt-1">
+                        {isAdmin ? `Manage classes for ${gymName || 'your gym'}.` : 'Review your assigned classes.'}
+                    </p>
+                </div>
+                {isAdmin && (
+                    <button
+                        onClick={handleOpenCreate}
+                        className="bg-brand text-black text-xs font-bold uppercase tracking-widest px-4 py-3 hover:bg-white transition-colors flex items-center gap-2"
+                    >
+                        <Plus className="h-4 w-4" />
+                        Add Activity
+                    </button>
+                )}
+            </div>
+
+            {error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                    {error}
+                </div>
+            )}
+
+            {isAdmin && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-slate-900 border border-white/10 p-4">
+                        <p className="text-[10px] uppercase tracking-widest text-white/40">Halls configured</p>
+                        <p className="text-2xl font-bold mt-2">{halls.length}</p>
+                        <p className="text-xs text-white/40">Gym capacity is {halls.length} rooms</p>
+                    </div>
+                    <div className="bg-slate-900 border border-white/10 p-4">
+                        <p className="text-[10px] uppercase tracking-widest text-white/40">Coaches</p>
+                        <p className="text-2xl font-bold mt-2">{coaches.length}</p>
+                        <p className="text-xs text-white/40">Available to assign</p>
+                    </div>
+                    <div className="bg-slate-900 border border-white/10 p-4">
+                        <p className="text-[10px] uppercase tracking-widest text-white/40">Activities</p>
+                        <p className="text-2xl font-bold mt-2">{activities.length}</p>
+                        <p className="text-xs text-white/40">Total classes</p>
+                    </div>
+                </div>
+            )}
+
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center p-12 text-white/40">
+                    <div className="h-8 w-8 rounded-full border-2 border-brand border-t-transparent animate-spin mb-4"></div>
+                    <p className="font-mono text-[10px] uppercase tracking-widest">Loading Activities...</p>
+                </div>
+            ) : activities.length === 0 ? (
+                <div className="p-6 border border-dashed border-white/10 text-white/40 text-sm">
+                    No activities found yet. {isAdmin ? 'Create your first class to get started.' : 'Check back once your admin assigns classes.'}
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {activities.map((activity, index) => {
+                        const hall = hallLookup.get(activity.hallId);
+                        const coachLabel = typeof activity.coach === 'string'
+                            ? coachLookup.get(activity.coach)
+                            : activity.coach;
+
+                        const coachName = coachLabel
+                            ? `${coachLabel.firstName || ''} ${coachLabel.lastName || ''}`.trim() || coachLabel.email || 'Coach'
+                            : 'Coach assigned';
+
+                        const hallLabel = hall
+                            ? `${hall.name} · ${hall.type}`
+                            : activity.hallId
+                                ? `Hall ${activity.hallId.slice(-6)}`
+                                : 'Hall unassigned';
+
+                        return (
+                            <div
+                                key={activity._id}
+                                className="bg-slate-900 border border-white/10 p-6 flex flex-col gap-4 animate-fade-in"
+                                style={{ animationDelay: `${(index + 1) * 80}ms` }}
+                            >
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white/90">{activity.name}</h3>
+                                        <p className="text-xs text-white/50 mt-1">Hall: {hallLabel}</p>
+                                    </div>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={() => handleOpenEdit(activity)}
+                                            className="p-2 hover:bg-white/5 text-white/40 hover:text-brand transition-colors"
+                                        >
+                                            <Edit2 className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 text-xs text-white/50">
+                                    <div className="flex items-center gap-2">
+                                        <Users className="h-4 w-4" />
+                                        <span>Coach: {coachName}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <MapPin className="h-4 w-4" />
+                                        <span>Hall cap: {hall?.capacity ?? 'N/A'}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between text-xs text-white/60">
+                                    <span>Price: {activity.monthlyPrice} DH</span>
+                                    <span>Max capacity: {activity.maxCapacity}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {isAdmin && (
+                <ActivityModal
+                    isOpen={isModalOpen}
+                    activity={selectedActivity}
+                    halls={halls}
+                    coaches={coaches}
+                    onClose={handleModalClose}
+                    onSaved={handleSaved}
+                />
+            )}
+        </div>
+    );
+};
