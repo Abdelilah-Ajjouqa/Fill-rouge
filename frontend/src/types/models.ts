@@ -1,3 +1,10 @@
+export interface Hall {
+  _id?: string;
+  name: string;
+  type: string;
+  capacity: number;
+}
+
 export interface Gym {
   _id: string;
   name: string;
@@ -5,6 +12,7 @@ export interface Gym {
   phone: string;
   logo?: string;
   isActive: boolean;
+  halls?: Hall[];
   createdAt?: string;
   updatedAt?: string;
 }

@@ -93,6 +93,8 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
     const adminCount = details.staff.filter((user) => user.role === 'ADMIN').length;
     const coachCount = details.staff.filter((user) => user.role === 'COACH').length;
     const memberPreview = details.members.slice(0, 6);
+    const hallCount = gym.halls?.length || 0;
+    const hallPreview = gym.halls?.slice(0, 6) || [];
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -161,6 +163,12 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
                                     <p className="text-xs text-white/40">Active members linked</p>
                                 </div>
                             </div>
+
+                            <div className="bg-slate-950/60 border border-white/5 p-4">
+                                <p className="text-[10px] uppercase tracking-widest text-white/40">Halls</p>
+                                <p className="text-2xl font-bold mt-2">{hallCount}</p>
+                                <p className="text-xs text-white/40">Total rooms configured</p>
+                            </div>
                         </div>
 
                         <div className="lg:col-span-2 space-y-6">
@@ -217,6 +225,37 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
                                         {details.members.length > memberPreview.length && (
                                             <p className="text-xs text-white/40">
                                                 +{details.members.length - memberPreview.length} more members
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] uppercase tracking-widest text-white/40 mb-3">Halls</p>
+                                {hallCount === 0 ? (
+                                    <div className="p-4 border border-dashed border-white/10 text-white/40 text-sm">
+                                        No halls configured yet.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {hallPreview.map((hall) => (
+                                            <div
+                                                key={hall._id || hall.name}
+                                                className="flex items-center justify-between bg-slate-950/60 border border-white/5 p-3"
+                                            >
+                                                <div>
+                                                    <p className="text-sm text-white">{hall.name}</p>
+                                                    <p className="text-xs text-white/40">{hall.type}</p>
+                                                </div>
+                                                <span className="text-[10px] uppercase tracking-widest text-white/40">
+                                                    {hall.capacity} seats
+                                                </span>
+                                            </div>
+                                        ))}
+                                        {hallCount > hallPreview.length && (
+                                            <p className="text-xs text-white/40">
+                                                +{hallCount - hallPreview.length} more halls
                                             </p>
                                         )}
                                     </div>
