@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Gym, GymDocument } from './schemas/gym.schema';
@@ -9,10 +9,14 @@ import { UpdateGymDto } from './dto/update-gym.dto';
 export class GymsService {
   constructor(@InjectModel(Gym.name) private gymModel: Model<GymDocument>) {}
 
-  async create(createGymDto: CreateGymDto): Promise<Gym> {
-    const createdGym = new this.gymModel(createGymDto);
-    return createdGym.save();
-  }
+    async create(createGymDto: CreateGymDto): Promise<Gym> {
+        const existing = await this.gymModel.findOne({ name: createGymDto.name }).exec();
+        if (existing) {
+            throw new ConflictException(`A gym with the name "${createGymDto.name}" already exists`);
+        }
+        const createdGym = new this.gymModel(createGymDto);
+        return createdGym.save();
+    }
 
   async findAll(): Promise<Gym[]> {
     return this.gymModel.find().exec();

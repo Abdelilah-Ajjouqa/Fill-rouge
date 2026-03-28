@@ -1,44 +1,8 @@
-### Create Admin User
-POST http://localhost:3000/users
-Content-Type: application/json
+@baseUrl = http://localhost:3000
+@token = YOUR_JWT_HERE
 
-{
-  "email": "admin@fitmanager.com",
-  "password": "securepassword123",
-  "role": "ADMIN",
-  "firstName": "Admin",
-  "lastName": "User"
-}
-
-### Create Coach User
-POST http://localhost:3000/users
-Content-Type: application/json
-
-{
-  "email": "coach@fitmanager.com",
-  "password": "coachpassword123",
-  "role": "COACH",
-  "firstName": "John",
-  "lastName": "Doe"
-}
-
-### Create Member User
-POST http://localhost:3000/users
-Content-Type: application/json
-
-{
-  "email": "member@fitmanager.com",
-  "password": "memberpassword123",
-  "role": "MEMBER",
-  "firstName": "Jane",
-  "lastName": "Smith"
-}
-
-### Get User by ID (Replace :id with actual ID from response)
-GET http://localhost:3000/users/YOUR_USER_ID_HERE
-
-### Login Admin
-POST http://localhost:3000/auth/login
+### Login (get JWT)
+POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
 {
@@ -46,23 +10,106 @@ Content-Type: application/json
   "password": "securepassword123"
 }
 
-### Login Coach
-POST http://localhost:3000/auth/login
+### Get my profile
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{token}}
+
+### Create gym (Super Admin)
+# Use multipart/form-data when uploading a logo file.
+POST {{baseUrl}}/gyms
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "FitClub Downtown",
+  "address": "123 Main St, Casablanca",
+  "phone": "0600000000",
+  "isActive": true
+}
+
+### Create admin (Super Admin)
+POST {{baseUrl}}/auth/register
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "admin@fitmanager.com",
+  "password": "securepassword123",
+  "role": "ADMIN",
+  "firstName": "Admin",
+  "lastName": "User",
+  "gymId": "GYM_ID_HERE"
+}
+
+### Create coach (Admin or Super Admin)
+POST {{baseUrl}}/auth/register
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "email": "coach@fitmanager.com",
-  "password": "coachpassword123"
+  "password": "coachpassword123",
+  "role": "COACH",
+  "firstName": "John",
+  "lastName": "Doe",
+  "gymId": "GYM_ID_HERE"
 }
 
-### Register New Member (Public Endpoint)
-POST http://localhost:3000/auth/register
+### Get user by ID
+GET {{baseUrl}}/users/YOUR_USER_ID_HERE
+Authorization: Bearer {{token}}
+
+### Create member (Admin or Coach)
+POST {{baseUrl}}/members
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "email": "newmember@fitmanager.com",
-  "password": "newpassword123",
-  "role": "MEMBER",
-  "firstName": "New",
-  "lastName": "Member"
+  "email": "member@fitmanager.com",
+  "password": "memberpassword123",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "phone": "0600000000",
+  "dateOfBirth": "2000-01-01"
 }
+
+### Create activity (Admin)
+POST {{baseUrl}}/activities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "CrossFit Basics",
+  "coach": "COACH_USER_ID",
+  "monthlyPrice": 300,
+  "maxCapacity": 60,
+  "schedule": [
+    { "day": "Monday", "startTime": "16:00", "endTime": "17:00" }
+  ]
+}
+
+### Create subscription (Admin or Coach)
+POST {{baseUrl}}/subscriptions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "member": "MEMBER_ID",
+  "activity": "ACTIVITY_ID",
+  "startDate": "2026-03-01"
+}
+
+### Create payment (full only)
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "subscription": "SUBSCRIPTION_ID",
+  "amount": 300,
+  "paidAt": "2026-03-01"
+}
+
+### List unpaid subscriptions
+GET {{baseUrl}}/payments/unpaid
+Authorization: Bearer {{token}}
