@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { MembersService } from './members.service';
 import { CreateMemberDto } from './dto/create-member.dto';
@@ -29,8 +30,11 @@ export class MembersController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.COACH)
-  findAll(@Request() req: any) {
+  @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  findAll(@Request() req: any, @Query('gymId') gymId?: string) {
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      return this.membersService.findAll(gymId);
+    }
     if (req.user.role === UserRole.COACH) {
       return this.membersService.findByCoach(req.user.userId, req.user.gymId);
     }

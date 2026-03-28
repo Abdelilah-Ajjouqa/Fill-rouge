@@ -35,8 +35,9 @@ export class MembersService {
     return createdMember.save();
   }
 
-  async findAll(gymId: string) {
-    return this.memberModel.find({ gymId }).select('-passwordHash').exec();
+  async findAll(gymId?: string) {
+    const filter = gymId ? { gymId } : {};
+    return this.memberModel.find(filter).select('-passwordHash').exec();
   }
 
   async findByCoach(coachId: string, gymId: string) {
