@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import api from '../../../api/axios';
 import type { User } from '../../../types/auth';
 import { GymAdminListSection } from './Helpers/GymAdminListSection';
+import { GymAdminCreateModal } from './Helpers/GymAdminCreateModal';
+import { GymAdminEditModal } from './Helpers/GymAdminEditModal';
 
 type FormState = {
     firstName: string;
@@ -308,189 +310,25 @@ export const GymAdminsPage = () => {
                 isDeleting={isDeleting}
             />
 
-            {isCreateModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-md w-full relative animate-fade-in">
-                        <h3 className="text-xl font-bold mb-4">Add Gym Admin</h3>
-                        <p className="text-white/60 text-sm mb-6">Create a new admin for this gym.</p>
+            <GymAdminCreateModal
+                isOpen={isCreateModalOpen}
+                values={formValues}
+                error={formError}
+                isSubmitting={isSubmitting}
+                onChange={handleInputChange}
+                onClose={closeCreateModal}
+                onSubmit={handleCreateAdmin}
+            />
 
-                        <form onSubmit={handleCreateAdmin} className="space-y-5">
-                            {formError && (
-                                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
-                                    {formError}
-                                </div>
-                            )}
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                        First Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formValues.firstName}
-                                        onChange={handleInputChange('firstName')}
-                                        required
-                                        placeholder="e.g. Sarah"
-                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                        Last Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formValues.lastName}
-                                        onChange={handleInputChange('lastName')}
-                                        required
-                                        placeholder="e.g. Bennani"
-                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                        Email *
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={formValues.email}
-                                        onChange={handleInputChange('email')}
-                                        required
-                                        placeholder="e.g. admin@gym.com"
-                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                        Password *
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={formValues.password}
-                                        onChange={handleInputChange('password')}
-                                        minLength={6}
-                                        required
-                                        placeholder="Minimum 6 characters"
-                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-4 pt-2 border-t border-white/5">
-                                <button
-                                    type="button"
-                                    onClick={closeCreateModal}
-                                    disabled={isSubmitting}
-                                    className="flex-1 bg-white/5 text-white/60 py-3 text-xs font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isSubmitting}
-                                    className="flex-1 bg-brand text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50"
-                                >
-                                    {isSubmitting ? 'Saving...' : 'Add Admin'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {isEditModalOpen && editingAdmin && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-md w-full relative animate-fade-in">
-                        <h3 className="text-xl font-bold mb-4">Edit Gym Admin</h3>
-                        <p className="text-white/60 text-sm mb-6">Update admin details.</p>
-
-                        <form onSubmit={handleUpdateAdmin} className="space-y-5">
-                            {editError && (
-                                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
-                                    {editError}
-                                </div>
-                            )}
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                        First Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editValues.firstName}
-                                        onChange={handleEditChange('firstName')}
-                                        required
-                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                        Last Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={editValues.lastName}
-                                        onChange={handleEditChange('lastName')}
-                                        required
-                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                        Email *
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={editValues.email}
-                                        onChange={handleEditChange('email')}
-                                        required
-                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                        Password
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={editValues.password}
-                                        onChange={handleEditChange('password')}
-                                        minLength={6}
-                                        placeholder="Leave blank to keep current"
-                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-4 pt-2 border-t border-white/5">
-                                <button
-                                    type="button"
-                                    onClick={closeEditModal}
-                                    disabled={isUpdating}
-                                    className="flex-1 bg-white/5 text-white/60 py-3 text-xs font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isUpdating}
-                                    className="flex-1 bg-brand text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50"
-                                >
-                                    {isUpdating ? 'Saving...' : 'Save Changes'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <GymAdminEditModal
+                isOpen={isEditModalOpen && Boolean(editingAdmin)}
+                values={editValues}
+                error={editError}
+                isSubmitting={isUpdating}
+                onChange={handleEditChange}
+                onClose={closeEditModal}
+                onSubmit={handleUpdateAdmin}
+            />
         </div>
     );
 };
