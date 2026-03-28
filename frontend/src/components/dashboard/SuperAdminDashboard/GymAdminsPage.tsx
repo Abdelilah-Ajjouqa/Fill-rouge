@@ -19,14 +19,26 @@ export const GymAdminsPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isToggling, setIsToggling] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
+    const [editError, setEditError] = useState<string | null>(null);
     const [formValues, setFormValues] = useState<FormState>({
         firstName: '',
         lastName: '',
         email: '',
         password: '',
     });
+    const [editValues, setEditValues] = useState<FormState>({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+    });
+    const [editingAdmin, setEditingAdmin] = useState<User | null>(null);
 
     const hasAdmin = useMemo(() => admins.length > 0, [admins.length]);
 
@@ -76,6 +88,18 @@ export const GymAdminsPage = () => {
         setFormError(null);
     };
 
+    const resetEditForm = () => {
+        setEditValues({ firstName: '', lastName: '', email: '', password: '' });
+        setEditError(null);
+        setEditingAdmin(null);
+    };
+
+    const updateAdminState = (updatedAdmin: User) => {
+        setAdmins((prev) => prev.map((admin) => (
+            admin._id === updatedAdmin._id ? updatedAdmin : admin
+        )));
+    };
+
     const openCreateModal = () => {
         if (hasAdmin) {
             toast.error('This gym already has an admin.');
@@ -90,9 +114,31 @@ export const GymAdminsPage = () => {
         resetForm();
     };
 
+    const openEditModal = (admin: User) => {
+        setEditValues({
+            firstName: admin.firstName,
+            lastName: admin.lastName,
+            email: admin.email,
+            password: '',
+        });
+        setEditingAdmin(admin);
+        setEditError(null);
+        setIsEditModalOpen(true);
+    };
+
+    const closeEditModal = () => {
+        setIsEditModalOpen(false);
+        resetEditForm();
+    };
+
     const handleInputChange = (field: keyof FormState) =>
         (event: React.ChangeEvent<HTMLInputElement>) => {
             setFormValues((prev) => ({ ...prev, [field]: event.target.value }));
+        };
+
+    const handleEditChange = (field: keyof FormState) =>
+        (event: React.ChangeEvent<HTMLInputElement>) => {
+            setEditValues((prev) => ({ ...prev, [field]: event.target.value }));
         };
 
     const handleCreateAdmin = async (event: React.FormEvent) => {
@@ -131,6 +177,88 @@ export const GymAdminsPage = () => {
             toast.error(message);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleUpdateAdmin = async (event: React.FormEvent) => {
+        event.preventDefault();
+
+        if (!editingAdmin) {
+            setEditError('Missing admin details.');
+            return;
+        }
+
+        setIsUpdating(true);
+        setEditError(null);
+
+        try {
+            const payload: Partial<FormState> = {
+                firstName: editValues.firstName,
+                lastName: editValues.lastName,
+                email: editValues.email,
+            };
+
+            if (editValues.password.trim().length > 0) {
+                payload.password = editValues.password;
+            }
+
+            const response = await api.patch<User>(`/users/${editingAdmin._id}`, payload);
+            updateAdminState(response.data);
+            toast.success('Admin updated successfully.');
+            closeEditModal();
+        } catch (err) {
+            let message = 'Failed to update admin.';
+            if (axios.isAxiosError(err)) {
+                message = err.response?.data?.message || message;
+            }
+            setEditError(message);
+            toast.error(message);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleToggleActive = async (admin: User) => {
+        const isActive = admin.isActive !== false;
+        const nextState = !isActive;
+
+        setIsToggling(true);
+
+        try {
+            const response = await api.patch<User>(`/users/${admin._id}`, { isActive: nextState });
+            updateAdminState(response.data);
+            toast.success(nextState ? 'Admin activated.' : 'Admin deactivated.');
+        } catch (err) {
+            let message = 'Failed to update admin status.';
+            if (axios.isAxiosError(err)) {
+                message = err.response?.data?.message || message;
+            }
+            toast.error(message);
+        } finally {
+            setIsToggling(false);
+        }
+    };
+
+    const handleDeleteAdmin = async (admin: User) => {
+        const confirmed = window.confirm(`Delete admin ${admin.firstName} ${admin.lastName}?`);
+        if (!confirmed) {
+            return;
+        }
+
+        setIsDeleting(true);
+
+        try {
+            await api.delete(`/users/${admin._id}`);
+            setAdmins([]);
+            toast.success('Admin deleted.');
+        } catch (err) {
+            let message = 'Failed to delete admin.';
+            if (axios.isAxiosError(err)) {
+                message = err.response?.data?.message || message;
+            }
+            toast.error(message);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -194,8 +322,42 @@ export const GymAdminsPage = () => {
                                 {admin.firstName} {admin.lastName}
                             </h3>
                             <p className="text-xs text-white/60 mt-1">{admin.email}</p>
-                            <div className="mt-4 text-[10px] font-bold uppercase tracking-widest text-brand">
-                                {admin.role}
+                            <div className="mt-4 flex items-center justify-between gap-3">
+                                <div className="text-[10px] font-bold uppercase tracking-widest text-brand">
+                                    {admin.role}
+                                </div>
+                                <span
+                                    className={
+                                        admin.isActive === false
+                                            ? 'text-[10px] font-bold uppercase tracking-widest text-red-400'
+                                            : 'text-[10px] font-bold uppercase tracking-widest text-brand'
+                                    }
+                                >
+                                    {admin.isActive === false ? 'Inactive' : 'Active'}
+                                </span>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => openEditModal(admin)}
+                                    className="bg-white/5 text-white/60 text-[10px] font-bold uppercase tracking-widest px-3 py-2 hover:bg-white/10 hover:text-white transition-colors"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => handleToggleActive(admin)}
+                                    disabled={isToggling}
+                                    className="bg-white/5 text-white/60 text-[10px] font-bold uppercase tracking-widest px-3 py-2 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
+                                >
+                                    {admin.isActive === false ? 'Activate' : 'Deactivate'}
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteAdmin(admin)}
+                                    disabled={isDeleting}
+                                    className="bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-widest px-3 py-2 hover:bg-red-500/20 transition-colors disabled:opacity-50"
+                                >
+                                    Delete
+                                </button>
                             </div>
                         </article>
                     ))}
@@ -289,6 +451,96 @@ export const GymAdminsPage = () => {
                                     className="flex-1 bg-brand text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50"
                                 >
                                     {isSubmitting ? 'Saving...' : 'Add Admin'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {isEditModalOpen && editingAdmin && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-md w-full relative animate-fade-in">
+                        <h3 className="text-xl font-bold mb-4">Edit Gym Admin</h3>
+                        <p className="text-white/60 text-sm mb-6">Update admin details.</p>
+
+                        <form onSubmit={handleUpdateAdmin} className="space-y-5">
+                            {editError && (
+                                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs">
+                                    {editError}
+                                </div>
+                            )}
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                        First Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editValues.firstName}
+                                        onChange={handleEditChange('firstName')}
+                                        required
+                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                        Last Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editValues.lastName}
+                                        onChange={handleEditChange('lastName')}
+                                        required
+                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                        Email *
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={editValues.email}
+                                        onChange={handleEditChange('email')}
+                                        required
+                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                        Password
+                                    </label>
+                                    <input
+                                        type="password"
+                                        value={editValues.password}
+                                        onChange={handleEditChange('password')}
+                                        minLength={6}
+                                        placeholder="Leave blank to keep current"
+                                        className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 pt-2 border-t border-white/5">
+                                <button
+                                    type="button"
+                                    onClick={closeEditModal}
+                                    disabled={isUpdating}
+                                    className="flex-1 bg-white/5 text-white/60 py-3 text-xs font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isUpdating}
+                                    className="flex-1 bg-brand text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50"
+                                >
+                                    {isUpdating ? 'Saving...' : 'Save Changes'}
                                 </button>
                             </div>
                         </form>

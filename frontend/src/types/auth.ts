@@ -7,6 +7,7 @@ export interface User {
   lastName: string;
   role: UserRole;
   gymId: string | null;
+  isActive?: boolean;
 }
 
 export interface AuthResponse {
