@@ -2,12 +2,7 @@ import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/tool
 import axios from 'axios';
 import api from '../../api/axios';
 import type { Gym } from '../../types/models';
-
-interface GymsState {
-  gyms: Gym[];
-  isLoading: boolean;
-  error: string | null;
-}
+import type { GymsState } from '../interfaces';
 
 const initialState: GymsState = {
   gyms: [],
