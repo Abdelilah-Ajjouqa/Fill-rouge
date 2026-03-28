@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { deleteGym, fetchGyms } from '../../../store/slices/gymsSlice';
 import type { AppDispatch, RootState } from '../../../store/store';
 import type { Gym } from '../../../types/models';
 import { EditBtn } from './Helpers/Edit-btn';
-import { AddNewClubBtn } from './Helpers/AddNewClub-btn';
 import { GymCard } from './Helpers/GymCard';
+import { AddNewClubBtn } from './Helpers/AddNewClub-btn';
 import { CreateGymModal } from './Helpers/CreateGymModal';
+import { GymDetailsModal } from './Helpers/GymDetailsModal';
 
 export const SuperAdminDashboard = () => {
     const dispatch = useDispatch<AppDispatch>();
+    const navigate = useNavigate();
     const { gyms, isLoading, error } = useSelector((state: RootState) => state.gyms);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedGym, setSelectedGym] = useState<Gym | null>(null);
+    const [detailsGym, setDetailsGym] = useState<Gym | null>(null);
 
     useEffect(() => {
         dispatch(fetchGyms());
@@ -58,6 +63,11 @@ export const SuperAdminDashboard = () => {
                                 setIsEditModalOpen(true);
                             }}
                             onDelete={(gymId) => dispatch(deleteGym(gymId))}
+                            onManageAdmins={(selected) => navigate(`/dashboard/gyms/${selected._id}/admins`)}
+                            onViewDetails={(selected) => {
+                                setDetailsGym(selected);
+                                setIsDetailsModalOpen(true);
+                            }}
                         />
                     ))
                 )}
@@ -92,6 +102,16 @@ export const SuperAdminDashboard = () => {
                 onClose={() => {
                     setIsEditModalOpen(false);
                     setSelectedGym(null);
+                }}
+            />
+
+            {/* Gym Details Modal */}
+            <GymDetailsModal
+                gym={detailsGym}
+                isOpen={isDetailsModalOpen}
+                onClose={() => {
+                    setIsDetailsModalOpen(false);
+                    setDetailsGym(null);
                 }}
             />
         </div>
