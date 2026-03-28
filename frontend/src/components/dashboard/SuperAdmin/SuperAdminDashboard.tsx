@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteGym, fetchGyms } from '../../../store/slices/gymsSlice';
-import { Flame, PlusSquare, MapPin, Phone, Edit2 } from 'lucide-react';
+import { Flame, MapPin, Phone, Edit2 } from 'lucide-react';
 import { GymForm } from '../GymForm';
 import type { AppDispatch, RootState } from '../../../store/store';
 import type { Gym } from '../../../types/models';
 import { EditBtn } from './Helpers/Edit-btn';
 import { DeleteBtn } from './Helpers/Delete-btn';
+import { AddNewClubBtn } from './Helpers/AddNewClub-btn';
 
 export const SuperAdminDashboard = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -114,17 +115,13 @@ export const SuperAdminDashboard = () => {
 
                 {/* Add New Club Button */}
                 {!isLoading && (
-                    <button
+                    <AddNewClubBtn
                         onClick={() => {
                             setSelectedGym(null);
                             setIsCreateModalOpen(true);
                         }}
-                        className="border border-dashed border-white/10 p-6 flex flex-col items-center justify-center gap-4 text-white/20 hover:text-brand hover:border-brand/40 transition-all hover:bg-white/2 animate-fade-in"
-                        style={{ animationDelay: `${(gyms.length + 1) * 100}ms` }}
-                    >
-                        <PlusSquare className="h-10 w-10" />
-                        <span className="text-xs font-bold uppercase tracking-widest">Register New Club</span>
-                    </button>
+                        animationDelayMs={(gyms.length + 1) * 100}
+                    />
                 )}
             </div>
 
