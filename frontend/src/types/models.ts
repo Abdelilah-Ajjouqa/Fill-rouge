@@ -17,6 +17,33 @@ export interface Gym {
   updatedAt?: string;
 }
 
+export interface ScheduleSlot {
+  day: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface CoachRef {
+  _id: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+export interface Activity {
+  _id: string;
+  gymId: string;
+  hallId: string;
+  name: string;
+  coach: CoachRef | string;
+  monthlyPrice: number;
+  maxCapacity: number;
+  schedule?: ScheduleSlot[];
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Member {
   _id: string;
   gymId?: string;
