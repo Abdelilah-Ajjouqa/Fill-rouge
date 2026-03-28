@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
-import { SuperAdminDashboard } from '../components/dashboard/Admin/SuperAdminDashboard';
+import { SuperAdminDashboard } from '../components/dashboard/SuperAdmin/SuperAdminDashboard';
 import { AdminDashboard } from '../components/dashboard/AdminDashboard';
 import { CoachDashboard } from '../components/dashboard/CoachDashboard';
 import { MemberDashboard } from '../components/dashboard/MemberDashboard';
