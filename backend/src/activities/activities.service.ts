@@ -4,17 +4,31 @@ import { Model } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
+import { Gym, GymDocument } from '../gyms/schemas/gym.schema';
 
 @Injectable()
 export class ActivitiesService {
   constructor(
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
+    @InjectModel(Gym.name) private gymModel: Model<GymDocument>,
   ) {}
 
   async create(
     createActivityDto: CreateActivityDto,
     gymId: string,
   ): Promise<Activity> {
+    const gym = await this.gymModel.findById(gymId).exec();
+    if (!gym) {
+      throw new NotFoundException(`Gym with ID "${gymId}" not found`);
+    }
+
+    const hall = gym.halls?.find(
+      (entry) => entry._id?.toString() === createActivityDto.hallId,
+    );
+    if (!hall) {
+      throw new NotFoundException('Hall not found in this gym');
+    }
+
     const createdActivity = new this.activityModel({
       ...createActivityDto,
       gymId,
@@ -54,6 +68,20 @@ export class ActivitiesService {
     updateActivityDto: UpdateActivityDto,
     gymId: string,
   ): Promise<Activity> {
+    if (updateActivityDto.hallId) {
+      const gym = await this.gymModel.findById(gymId).exec();
+      if (!gym) {
+        throw new NotFoundException(`Gym with ID "${gymId}" not found`);
+      }
+
+      const hall = gym.halls?.find(
+        (entry) => entry._id?.toString() === updateActivityDto.hallId,
+      );
+      if (!hall) {
+        throw new NotFoundException('Hall not found in this gym');
+      }
+    }
+
     const updatedActivity = await this.activityModel
       .findOneAndUpdate({ _id: id, gymId }, updateActivityDto, { new: true })
       .populate('coach', 'firstName lastName email')

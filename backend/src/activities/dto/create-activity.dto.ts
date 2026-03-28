@@ -31,6 +31,10 @@ export class CreateActivityDto {
 
   @IsMongoId()
   @IsNotEmpty()
+  hallId: string;
+
+  @IsMongoId()
+  @IsNotEmpty()
   coach: string;
 
   @IsNumber()

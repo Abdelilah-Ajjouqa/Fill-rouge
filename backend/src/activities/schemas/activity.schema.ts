@@ -15,6 +15,9 @@ export class Activity {
   @Prop({ type: Types.ObjectId, ref: 'Gym', required: true })
   gymId: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, required: true })
+  hallId: Types.ObjectId;
+
   @Prop({ required: true })
   name: string;
 
