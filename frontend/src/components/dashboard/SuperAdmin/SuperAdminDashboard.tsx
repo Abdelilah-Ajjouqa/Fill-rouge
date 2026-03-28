@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteGym, fetchGyms } from '../../../store/slices/gymsSlice';
-import { Flame, PlusSquare, MapPin, Phone, Edit2, Trash2 } from 'lucide-react';
+import { Flame, PlusSquare, MapPin, Phone, Edit2 } from 'lucide-react';
 import { GymForm } from '../GymForm';
 import type { AppDispatch, RootState } from '../../../store/store';
 import type { Gym } from '../../../types/models';
 import { EditBtn } from './Helpers/Edit-btn';
+import { DeleteBtn } from './Helpers/Delete-btn';
 
 export const SuperAdminDashboard = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -97,16 +98,10 @@ export const SuperAdminDashboard = () => {
                                     >
                                         <Edit2 className="h-4 w-4" />
                                     </button>
-                                    <button
-                                        onClick={() => {
-                                            if (window.confirm(`Are you sure you want to delete ${gym.name}?`)) {
-                                                dispatch(deleteGym(gym._id));
-                                            }
-                                        }}
-                                        className="p-2 hover:bg-white/5 text-white/40 hover:text-red-500 transition-colors"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
+                                    <DeleteBtn
+                                        gym={gym}
+                                        onDelete={(gymId) => dispatch(deleteGym(gymId))}
+                                    />
                                 </div>
 
                                 <button className="bg-brand text-black text-[10px] font-bold uppercase tracking-widest px-4 py-2 hover:bg-white transition-colors">
