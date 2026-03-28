@@ -42,6 +42,7 @@ export const GymAdminsPage = () => {
                     <p className="text-white/40 text-sm mt-1">
                         Manage the admin for gym {gymId ? gymId.slice(-6) : 'Unknown'}
                     </p>
+                    <p className="text-white/40 text-xs mt-1">Only one admin is allowed per gym.</p>
                 </div>
 
                 <div className="flex items-center gap-2">

@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,7 +25,13 @@ export class UsersController {
 
   @Post()
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  create(@Body() createUserDto: CreateUserDto) {
+  create(@Request() req: any, @Body() createUserDto: CreateUserDto) {
+    if (req.user.role === UserRole.ADMIN) {
+      if (createUserDto.role !== UserRole.COACH) {
+        throw new ForbiddenException('Admins can only create coaches.');
+      }
+      createUserDto.gymId = req.user.gymId;
+    }
     return this.usersService.create(createUserDto);
   }
 
