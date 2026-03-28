@@ -20,7 +20,7 @@ Les salles de sport utilisent souvent des cahiers ou des fichiers Excel pour gé
 
 - **Multi-salle :** Gérer plusieurs salles de sport sur une seule plateforme.
 - **Gestion par activité :** Chaque activité (Boxe, Yoga…) a son prix, son coach et sa liste de membres.
-- **Suivi des paiements :** Savoir qui a payé, qui doit de l'argent, combien reste à payer.
+- **Suivi des paiements :** Savoir qui a paye et qui est en retard.
 - **Contrôle de capacité :** Si une activité est pleine (ex: 60/60), personne ne peut s'inscrire jusqu'à qu'une place se libère.
 
 ---
@@ -73,7 +73,7 @@ Il y a **4 rôles** dans la plateforme, organisés comme une pyramide :
 - Peut être inscrit à **plusieurs activités** dans la même salle.
 - Peut se connecter pour consulter :
   - Ses abonnements actifs et expirés
-  - Son historique de paiements et ses dettes
+  - Son historique de paiements et son statut
   - Le planning de ses activités
 - Peut modifier ses **informations de base** (photo, téléphone, email, mot de passe).
 - Ne peut **pas modifier** les champs critiques (certificat médical, abonnements, paiements) — cela passe par le coach ou l'admin.
@@ -90,7 +90,7 @@ Le Super Admin peut créer des salles de sport.
 - Nom (ex: "FitClub Casablanca")
 - Adresse
 - Téléphone
-- Logo
+- Logo (upload depuis l'appareil)
 - Statut (active / suspendue)
 
 ### 4.2 Module : Gestion des Activités
@@ -146,7 +146,7 @@ Un abonnement lie un membre à une activité. C'est ici qu'on gère l'argent et 
 
 ### 4.5 Module : Paiements
 
-Chaque paiement est lié à un abonnement. Le système gère les **paiements partiels** (dettes).
+Chaque paiement est lié à un abonnement. Le systeme accepte uniquement les **paiements complets** (pas de paiements partiels).
 
 **Données d'un paiement :**
 - Abonnement concerné
@@ -156,8 +156,7 @@ Chaque paiement est lié à un abonnement. Le système gère les **paiements par
 
 **Exemple :**
 > L'abonnement de Karim coûte 300 DH.  
-> Il paye 100 DH → le système affiche "Reste à payer : 200 DH".  
-> Il paye 200 DH plus tard → dette = 0 DH.
+> Il paye 300 DH en une fois → statut = paye.
 
 ### 4.6 Module : Tableau de Bord (Dashboard)
 
@@ -181,7 +180,7 @@ Chaque rôle voit un dashboard différent.
 
 **Membre :**
 - Ses abonnements actifs (activités, dates, statut)
-- Son historique de paiements et solde restant
+- Son historique de paiements et statut
 - Le planning de ses activités (jours et horaires)
 
 ---
@@ -321,7 +320,7 @@ Note : Les membres peuvent consulter toutes leurs données et modifier uniquemen
 |---------|-------|-----|-------------|
 | POST | /payments | Admin / Coach | Enregistrer un paiement |
 | GET | /payments | Admin / Coach | Lister les paiements |
-| GET | /payments/debts | Admin / Coach | Voir les dettes |
+| GET | /payments/unpaid | Admin / Coach | Voir les paiements en attente |
 
 ---
 
@@ -331,7 +330,7 @@ Note : Les membres peuvent consulter toutes leurs données et modifier uniquemen
 2. **Un membre peut s'inscrire à plusieurs activités** dans la même salle.
 3. **Si une activité est pleine** (capacité max atteinte) → inscription bloquée automatiquement.
 4. **Si deux activités ont le même horaire** → avertissement affiché, mais inscription autorisée.
-5. **Les paiements partiels sont autorisés** → le système calcule le reste à payer.
+5. **Les paiements complets sont obligatoires** → aucun paiement partiel n'est accepte.
 6. **L'abonnement expire automatiquement** après la période payée (1 mois par défaut).
 7. **Les membres ont un compte limité** — ils peuvent modifier leurs infos de base, mais leurs abonnements, paiements et plannings sont en lecture seule.
 8. **Chaque rôle ne voit que ce qui le concerne** (isolation des données par salle et par rôle).
