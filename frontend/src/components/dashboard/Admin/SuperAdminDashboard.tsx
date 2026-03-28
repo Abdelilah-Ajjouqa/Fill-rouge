@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteGym, fetchGyms } from '../../store/slices/gymsSlice';
+import { deleteGym, fetchGyms } from '../../../store/slices/gymsSlice';
 import { Flame, PlusSquare, MapPin, Phone, Edit2, Trash2 } from 'lucide-react';
-import { GymForm } from './GymForm';
-import type { AppDispatch, RootState } from '../../store/store';
-import type { Gym } from '../../types/models';
+import { GymForm } from '../GymForm';
+import type { AppDispatch, RootState } from '../../../store/store';
+import type { Gym } from '../../../types/models';
+import { EditBtn } from './Helpers/Edit-btn';
 
 export const SuperAdminDashboard = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -151,23 +152,15 @@ export const SuperAdminDashboard = () => {
             )}
 
             {/* Edit Gym Modal */}
-            {isEditModalOpen && selectedGym && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-md w-full relative animate-fade-in">
-                        <h3 className="text-xl font-bold mb-4">Edit Gym</h3>
-                        <p className="text-white/60 text-sm mb-6">Update the facility details below.</p>
-
-                        <GymForm
-                            gym={selectedGym}
-                            onSuccess={handleSuccess}
-                            onCancel={() => {
-                                setIsEditModalOpen(false);
-                                setSelectedGym(null);
-                            }}
-                        />
-                    </div>
-                </div>
-            )}
+            <EditBtn
+                isOpen={isEditModalOpen}
+                selectedGym={selectedGym}
+                onSuccess={handleSuccess}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedGym(null);
+                }}
+            />
         </div>
     );
 };
