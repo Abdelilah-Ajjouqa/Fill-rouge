@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, LayoutGrid, Calendar, BarChart3, Settings, ChevronDown, User, LogOut } from 'lucide-react';
+import { Activity, LayoutGrid, Calendar, BarChart3, Settings, ChevronDown, User, Users, LogOut } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
