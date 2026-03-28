@@ -4,6 +4,7 @@ import { AuthPage } from './pages/AuthPage'
 import { Dashboard } from './pages/Dashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { DashboardLayout } from './components/layout/DashboardLayout'
+import { GymAdminsPage } from './components/dashboard/SuperAdminDashboard/GymAdminsPage'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/gyms/:gymId/admins" element={<GymAdminsPage />} />
           </Route>
         </Route>
       </Routes>
