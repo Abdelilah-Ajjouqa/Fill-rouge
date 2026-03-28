@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, LayoutGrid, Users, Calendar, BarChart3, ChevronDown, User, LogOut } from 'lucide-react';
+import { Activity, LayoutGrid, Calendar, BarChart3, Settings, ChevronDown, User, LogOut } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
@@ -22,10 +22,10 @@ export const DashboardLayout = () => {
 
     if (userRole === 'SUPER_ADMIN') {
         navItems = [
-            { name: 'Clubs Overview', icon: LayoutGrid, path: '/dashboard' },
-            { name: 'Staff Management', icon: Users, path: '/dashboard/staff' },
-            { name: 'Global Schedule', icon: Calendar, path: '/dashboard/schedule' },
+            { name: 'Clubs & Staff', icon: LayoutGrid, path: '/dashboard' },
+            { name: 'Schedule', icon: Calendar, path: '/dashboard/schedule' },
             { name: 'Analytics', icon: BarChart3, path: '/dashboard/analytics' },
+            { name: 'Settings', icon: Settings, path: '/dashboard/settings' },
         ]
     } else if (userRole === 'ADMIN') {
         navItems = [

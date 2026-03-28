@@ -3,14 +3,7 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import api from '../../api/axios';
 import type { User, AuthResponse } from '../../types/auth';
-
-interface AuthState {
-  user: User | null;
-  token: string | null;
-  isLoading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
-}
+import type { AuthState } from '../interfaces';
 
 const initialState: AuthState = {
   user: null,
