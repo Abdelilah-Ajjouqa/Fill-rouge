@@ -16,6 +16,7 @@ import {
   Activity,
   ActivityDocument,
 } from '../activities/schemas/activity.schema';
+import { Gym, GymDocument } from '../gyms/schemas/gym.schema';
 
 @Injectable()
 export class SubscriptionsService {
@@ -23,6 +24,7 @@ export class SubscriptionsService {
     @InjectModel(Subscription.name)
     private subscriptionModel: Model<SubscriptionDocument>,
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
+    @InjectModel(Gym.name) private gymModel: Model<GymDocument>,
   ) {}
 
   async create(
@@ -41,6 +43,24 @@ export class SubscriptionsService {
       throw new NotFoundException('Activity not found in this gym');
     }
 
+    if (!activity.hallId) {
+      throw new BadRequestException('Activity has no hall assigned');
+    }
+
+    const gym = await this.gymModel.findById(gymId).exec();
+    if (!gym) {
+      throw new NotFoundException('Gym not found');
+    }
+
+    const hall = gym.halls?.find(
+      (entry) => entry._id?.toString() === activity.hallId?.toString(),
+    );
+    if (!hall) {
+      throw new BadRequestException('Activity hall not found in this gym');
+    }
+
+    const effectiveCapacity = Math.min(activity.maxCapacity, hall.capacity);
+
     // Check capacity: count active subscriptions for this activity
     const activeCount = await this.subscriptionModel
       .countDocuments({
@@ -49,9 +69,9 @@ export class SubscriptionsService {
       })
       .exec();
 
-    if (activeCount >= activity.maxCapacity) {
+    if (activeCount >= effectiveCapacity) {
       throw new BadRequestException(
-        `Activity "${activity.name}" is full (${activeCount}/${activity.maxCapacity}). No more members can be enrolled.`,
+        `Activity "${activity.name}" is full (${activeCount}/${effectiveCapacity}). No more members can be enrolled.`,
       );
     }
 
