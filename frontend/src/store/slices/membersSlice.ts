@@ -2,21 +2,7 @@ import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/tool
 import axios from 'axios';
 import api from '../../api/axios';
 import type { Member } from '../../types/models';
-
-export interface MemberInput {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password?: string;
-    phone?: string;
-    dateOfBirth?: string;
-}
-
-interface MembersState {
-    members: Member[];
-    isLoading: boolean;
-    error: string | null;
-}
+import type { MemberInput, MembersState } from '../interfaces';
 
 const initialState: MembersState = {
     members: [],
