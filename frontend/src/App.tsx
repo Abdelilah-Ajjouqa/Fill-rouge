@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { GymAdminsPage } from './components/dashboard/SuperAdminDashboard/GymAdminsPage'
+import { ActivitiesPage } from './components/dashboard/ActivitiesPage'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/gyms/:gymId/admins" element={<GymAdminsPage />} />
+            <Route path="/dashboard/activities" element={<ActivitiesPage />} />
           </Route>
         </Route>
       </Routes>
