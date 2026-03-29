@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { ActivitiesService } from './activities.service';
 import { CreateActivityDto } from './dto/create-activity.dto';
@@ -29,14 +30,17 @@ export class ActivitiesController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.COACH)
-  findAll(@Request() req: any) {
+  @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  findAll(@Request() req: any, @Query('gymId') gymId?: string) {
     if (req.user.role === UserRole.COACH) {
       // Coach sees only their assigned activities in this gym
       return this.activitiesService.findByCoach(
         req.user.userId,
         req.user.gymId,
       );
+    }
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      return this.activitiesService.findAll(gymId);
     }
     // Admin sees all activities for their gym
     return this.activitiesService.findAll(req.user.gymId);

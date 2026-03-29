@@ -81,9 +81,10 @@ export class PaymentsService {
     return payment.save();
   }
 
-  async findAll(gymId: string): Promise<Payment[]> {
+  async findAll(gymId?: string): Promise<Payment[]> {
+    const filter = gymId ? { gymId: new Types.ObjectId(gymId) } : {};
     return this.paymentModel
-      .find({ gymId: new Types.ObjectId(gymId) })
+      .find(filter)
       .populate({
         path: 'subscription',
         populate: [
@@ -95,10 +96,14 @@ export class PaymentsService {
       .exec();
   }
 
-  async findUnpaid(gymId: string) {
+  async findUnpaid(gymId?: string) {
     // Find active subscriptions that have no payment record
+    const subscriptionFilter: Record<string, any> = { status: 'active' };
+    if (gymId) {
+      subscriptionFilter.gymId = new Types.ObjectId(gymId);
+    }
     const subscriptions = await this.subscriptionModel
-      .find({ gymId: new Types.ObjectId(gymId), status: 'active' })
+      .find(subscriptionFilter)
       .populate('member', 'firstName lastName email phone')
       .populate('activity', 'name monthlyPrice')
       .exec();

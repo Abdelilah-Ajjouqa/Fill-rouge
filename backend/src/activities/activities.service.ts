@@ -36,10 +36,12 @@ export class ActivitiesService {
     return createdActivity.save();
   }
 
-  async findAll(gymId: string): Promise<Activity[]> {
+  async findAll(gymId?: string): Promise<Activity[]> {
+    const filter = gymId ? { gymId } : {};
     return this.activityModel
-      .find({ gymId })
+      .find(filter)
       .populate('coach', 'firstName lastName email')
+      .populate('gymId', 'name')
       .exec();
   }
 

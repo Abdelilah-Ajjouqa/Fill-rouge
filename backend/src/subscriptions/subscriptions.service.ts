@@ -112,9 +112,10 @@ export class SubscriptionsService {
     return subscription.save();
   }
 
-  async findAll(gymId: string): Promise<Subscription[]> {
+  async findAll(gymId?: string): Promise<Subscription[]> {
+    const filter = gymId ? { gymId: new Types.ObjectId(gymId) } : {};
     return this.subscriptionModel
-      .find({ gymId: new Types.ObjectId(gymId) })
+      .find(filter)
       .populate('member', 'firstName lastName email')
       .populate('activity', 'name monthlyPrice')
       .exec();
