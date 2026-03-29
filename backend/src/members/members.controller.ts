@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  BadRequestException,
   UseGuards,
   Request,
   Query,
@@ -24,8 +25,14 @@ export class MembersController {
   constructor(private readonly membersService: MembersService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.COACH)
+  @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
   create(@Request() req: any, @Body() createMemberDto: CreateMemberDto) {
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      if (!createMemberDto.gymId) {
+        throw new BadRequestException('gymId is required to create a member');
+      }
+      return this.membersService.create(createMemberDto, createMemberDto.gymId);
+    }
     return this.membersService.create(createMemberDto, req.user.gymId);
   }
 

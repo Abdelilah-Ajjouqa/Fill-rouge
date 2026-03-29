@@ -1,6 +1,7 @@
 import {
   IsString,
   IsEmail,
+  IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsDateString,
@@ -8,6 +9,10 @@ import {
 } from 'class-validator';
 
 export class CreateMemberDto {
+  @IsOptional()
+  @IsMongoId()
+  gymId?: string;
+
   @IsString()
   @IsNotEmpty()
   firstName: string;
