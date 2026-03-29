@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import axios from 'axios';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 import api from '../../../../api/axios';
 import type { Gym, Member } from '../../../../types/models';
 import type { User } from '../../../../types/auth';
+import { CoachCreateModal } from '../../modals/CoachCreateModal';
+import type { CoachFormState } from '../../modals/CoachCreateModal';
+import { MemberCreateModal } from '../../modals/MemberCreateModal';
+import type { MemberFormState } from '../../modals/MemberCreateModal';
 
 type GymDetailsModalProps = {
     gym: Gym | null;
@@ -31,6 +37,59 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
     const [details, setDetails] = useState<GymDetails>({ staff: [], members: [] });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
+    const [coachForm, setCoachForm] = useState<CoachFormState>({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+    });
+    const [coachError, setCoachError] = useState<string | null>(null);
+    const [isCoachSubmitting, setIsCoachSubmitting] = useState(false);
+    const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+    const [memberForm, setMemberForm] = useState<MemberFormState>({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        phone: '',
+        dateOfBirth: '',
+    });
+    const [memberError, setMemberError] = useState<string | null>(null);
+    const [isMemberSubmitting, setIsMemberSubmitting] = useState(false);
+
+    const handleCoachChange = (field: keyof CoachFormState) => (event: ChangeEvent<HTMLInputElement>) => {
+        setCoachForm((prev) => ({ ...prev, [field]: event.target.value }));
+    };
+
+    const handleMemberChange = (field: keyof MemberFormState) => (event: ChangeEvent<HTMLInputElement>) => {
+        setMemberForm((prev) => ({ ...prev, [field]: event.target.value }));
+    };
+
+    const resetCoachForm = () => {
+        setCoachForm({
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+        });
+    };
+
+    const resetMemberForm = () => {
+        setMemberForm({
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+            phone: '',
+            dateOfBirth: '',
+        });
+    };
+
+    const refreshDetails = () => {
+        setRefreshKey((prev) => prev + 1);
+    };
 
     useEffect(() => {
         if (!isOpen || !gym) {
@@ -84,7 +143,112 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
         return () => {
             isActive = false;
         };
-    }, [gym, isOpen]);
+    }, [gym, isOpen, refreshKey]);
+
+    const openCoachModal = () => {
+        setCoachError(null);
+        setIsCoachModalOpen(true);
+    };
+
+    const closeCoachModal = () => {
+        setIsCoachModalOpen(false);
+        setCoachError(null);
+        resetCoachForm();
+    };
+
+    const openMemberModal = () => {
+        setMemberError(null);
+        setIsMemberModalOpen(true);
+    };
+
+    const closeMemberModal = () => {
+        setIsMemberModalOpen(false);
+        setMemberError(null);
+        resetMemberForm();
+    };
+
+    const handleCreateCoach = async (event: FormEvent) => {
+        event.preventDefault();
+        if (!gym) {
+            return;
+        }
+
+        setCoachError(null);
+
+        if (!coachForm.firstName.trim() || !coachForm.lastName.trim() || !coachForm.email.trim() || !coachForm.password.trim()) {
+            setCoachError('Please fill all required fields.');
+            return;
+        }
+
+        setIsCoachSubmitting(true);
+        try {
+            await api.post('/users', {
+                firstName: coachForm.firstName.trim(),
+                lastName: coachForm.lastName.trim(),
+                email: coachForm.email.trim(),
+                password: coachForm.password,
+                role: 'COACH',
+                gymId: gym._id,
+            });
+            toast.success('Coach created successfully.');
+            closeCoachModal();
+            refreshDetails();
+        } catch (err) {
+            let message = 'Failed to create coach.';
+            if (axios.isAxiosError(err)) {
+                message = err.response?.data?.message || message;
+            }
+            setCoachError(message);
+        } finally {
+            setIsCoachSubmitting(false);
+        }
+    };
+
+    const handleCreateMember = async (event: FormEvent) => {
+        event.preventDefault();
+        if (!gym) {
+            return;
+        }
+
+        setMemberError(null);
+
+        if (!memberForm.firstName.trim() || !memberForm.lastName.trim() || !memberForm.email.trim() || !memberForm.password.trim()) {
+            setMemberError('Please fill all required fields.');
+            return;
+        }
+
+        const payload: Record<string, string> = {
+            firstName: memberForm.firstName.trim(),
+            lastName: memberForm.lastName.trim(),
+            email: memberForm.email.trim(),
+            password: memberForm.password,
+            gymId: gym._id,
+        };
+
+        if (memberForm.phone.trim()) {
+            payload.phone = memberForm.phone.trim();
+        }
+
+        if (memberForm.dateOfBirth) {
+            payload.dateOfBirth = memberForm.dateOfBirth;
+        }
+
+        setIsMemberSubmitting(true);
+        try {
+            await api.post('/members', payload);
+            toast.success('Member created successfully.');
+            closeMemberModal();
+            refreshDetails();
+        } catch (err) {
+            let message = 'Failed to create member.';
+            if (axios.isAxiosError(err)) {
+                message = err.response?.data?.message || message;
+            }
+            setMemberError(message);
+        } finally {
+            setIsMemberSubmitting(false);
+        }
+    };
 
     if (!isOpen || !gym) {
         return null;
@@ -173,7 +337,15 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
 
                         <div className="lg:col-span-2 space-y-6">
                             <div>
-                                <p className="text-[10px] uppercase tracking-widest text-white/40 mb-3">Staff</p>
+                                <div className="flex items-center justify-between mb-3">
+                                    <p className="text-[10px] uppercase tracking-widest text-white/40">Staff</p>
+                                    <button
+                                        onClick={openCoachModal}
+                                        className="text-[10px] font-bold uppercase tracking-widest px-3 py-2 border border-white/10 text-white/60 hover:text-white hover:border-brand/40 transition-colors"
+                                    >
+                                        Add Coach
+                                    </button>
+                                </div>
                                 {details.staff.length === 0 ? (
                                     <div className="p-4 border border-dashed border-white/10 text-white/40 text-sm">
                                         No staff assigned yet.
@@ -199,7 +371,15 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
                             </div>
 
                             <div>
-                                <p className="text-[10px] uppercase tracking-widest text-white/40 mb-3">Members</p>
+                                <div className="flex items-center justify-between mb-3">
+                                    <p className="text-[10px] uppercase tracking-widest text-white/40">Members</p>
+                                    <button
+                                        onClick={openMemberModal}
+                                        className="text-[10px] font-bold uppercase tracking-widest px-3 py-2 border border-white/10 text-white/60 hover:text-white hover:border-brand/40 transition-colors"
+                                    >
+                                        Add Member
+                                    </button>
+                                </div>
                                 {details.members.length === 0 ? (
                                     <div className="p-4 border border-dashed border-white/10 text-white/40 text-sm">
                                         No members found yet.
@@ -265,6 +445,24 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
                     </div>
                 )}
             </div>
+            <CoachCreateModal
+                isOpen={isCoachModalOpen}
+                values={coachForm}
+                error={coachError}
+                isSubmitting={isCoachSubmitting}
+                onChange={handleCoachChange}
+                onClose={closeCoachModal}
+                onSubmit={handleCreateCoach}
+            />
+            <MemberCreateModal
+                isOpen={isMemberModalOpen}
+                values={memberForm}
+                error={memberError}
+                isSubmitting={isMemberSubmitting}
+                onChange={handleMemberChange}
+                onClose={closeMemberModal}
+                onSubmit={handleCreateMember}
+            />
         </div>
     );
 };
