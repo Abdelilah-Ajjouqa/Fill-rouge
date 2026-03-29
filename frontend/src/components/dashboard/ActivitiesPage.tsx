@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { Edit2, Plus, Users, MapPin } from 'lucide-react';
@@ -7,6 +8,8 @@ import api from '../../api/axios';
 import type { RootState } from '../../store/store';
 import type { Activity, Gym, Hall } from '../../types/models';
 import type { User } from '../../types/auth';
+import { CoachCreateModal } from './modals/CoachCreateModal';
+import type { CoachFormState } from './modals/CoachCreateModal';
 
 type ActivityModalProps = {
     isOpen: boolean;
@@ -116,8 +119,9 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
     const hasCoaches = coaches.length > 0;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-lg w-full relative animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50">
+            <div className="min-h-full flex items-start sm:items-center justify-center p-4 sm:p-6 h-screen">
+                <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-lg w-full animate-fade-in">
                 <div className="flex items-start justify-between mb-6">
                     <div>
                         <h3 className="text-xl font-bold">{activity ? 'Edit Activity' : 'Create Activity'}</h3>
@@ -254,6 +258,7 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
                         </button>
                     </div>
                 </form>
+                </div>
             </div>
         </div>
     );
@@ -272,6 +277,71 @@ export const ActivitiesPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+    const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
+    const [coachForm, setCoachForm] = useState<CoachFormState>({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+    });
+    const [coachError, setCoachError] = useState<string | null>(null);
+    const [isCoachSubmitting, setIsCoachSubmitting] = useState(false);
+
+    const handleCoachChange = (field: keyof CoachFormState) => (event: ChangeEvent<HTMLInputElement>) => {
+        setCoachForm((prev) => ({ ...prev, [field]: event.target.value }));
+    };
+
+    const resetCoachForm = () => {
+        setCoachForm({
+            firstName: '',
+            lastName: '',
+            email: '',
+            password: '',
+        });
+    };
+
+    const openCoachModal = () => {
+        setCoachError(null);
+        setIsCoachModalOpen(true);
+    };
+
+    const closeCoachModal = () => {
+        setIsCoachModalOpen(false);
+        setCoachError(null);
+        resetCoachForm();
+    };
+
+    const handleCreateCoach = async (event: FormEvent) => {
+        event.preventDefault();
+        setCoachError(null);
+
+        if (!coachForm.firstName.trim() || !coachForm.lastName.trim() || !coachForm.email.trim() || !coachForm.password.trim()) {
+            setCoachError('Please fill all required fields.');
+            return;
+        }
+
+        setIsCoachSubmitting(true);
+        try {
+            await api.post('/users', {
+                firstName: coachForm.firstName.trim(),
+                lastName: coachForm.lastName.trim(),
+                email: coachForm.email.trim(),
+                password: coachForm.password,
+                role: 'COACH',
+            });
+            toast.success('Coach created successfully.');
+            closeCoachModal();
+            loadActivities();
+        } catch (err) {
+            let message = 'Failed to create coach.';
+            if (axios.isAxiosError(err)) {
+                message = err.response?.data?.message || message;
+            }
+            setCoachError(message);
+        } finally {
+            setIsCoachSubmitting(false);
+        }
+    };
 
     const hallLookup = useMemo(() => {
         const map = new Map<string, Hall>();
@@ -375,13 +445,21 @@ export const ActivitiesPage = () => {
                     </p>
                 </div>
                 {isAdmin && (
-                    <button
-                        onClick={handleOpenCreate}
-                        className="bg-brand text-black text-xs font-bold uppercase tracking-widest px-4 py-3 hover:bg-white transition-colors flex items-center gap-2"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Add Activity
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={openCoachModal}
+                            className="border border-white/10 text-white/70 text-xs font-bold uppercase tracking-widest px-4 py-3 hover:border-brand/40 hover:text-white transition-colors"
+                        >
+                            Add Coach
+                        </button>
+                        <button
+                            onClick={handleOpenCreate}
+                            className="bg-brand text-black text-xs font-bold uppercase tracking-widest px-4 py-3 hover:bg-white transition-colors flex items-center gap-2"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Add Activity
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -488,6 +566,17 @@ export const ActivitiesPage = () => {
                     coaches={coaches}
                     onClose={handleModalClose}
                     onSaved={handleSaved}
+                />
+            )}
+            {isAdmin && (
+                <CoachCreateModal
+                    isOpen={isCoachModalOpen}
+                    values={coachForm}
+                    error={coachError}
+                    isSubmitting={isCoachSubmitting}
+                    onChange={handleCoachChange}
+                    onClose={closeCoachModal}
+                    onSubmit={handleCreateCoach}
                 />
             )}
         </div>
