@@ -17,6 +17,8 @@ export interface Gym {
   updatedAt?: string;
 }
 
+export type GymRef = Pick<Gym, '_id' | 'name'>;
+
 export interface ScheduleSlot {
   day: string;
   startTime: string;
@@ -32,7 +34,7 @@ export interface CoachRef {
 
 export interface Activity {
   _id: string;
-  gymId: string;
+  gymId: string | GymRef;
   hallId: string;
   name: string;
   coach: CoachRef | string;
