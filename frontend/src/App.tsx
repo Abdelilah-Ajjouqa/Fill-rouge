@@ -6,6 +6,8 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { GymAdminsPage } from './components/dashboard/SuperAdminDashboard/GymAdminsPage'
 import { ActivitiesPage } from './components/dashboard/ActivitiesPage'
+import { SuperAdminSchedulePage } from './components/dashboard/SuperAdminDashboard/SuperAdminSchedulePage'
+import { SuperAdminAnalyticsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminAnalyticsPage'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -22,6 +24,8 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/gyms/:gymId/admins" element={<GymAdminsPage />} />
             <Route path="/dashboard/activities" element={<ActivitiesPage />} />
+            <Route path="/dashboard/schedule" element={<SuperAdminSchedulePage />} />
+            <Route path="/dashboard/analytics" element={<SuperAdminAnalyticsPage />} />
           </Route>
         </Route>
       </Routes>
