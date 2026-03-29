@@ -7,7 +7,9 @@ import { DashboardLayout } from './components/layout/DashboardLayout'
 import { GymAdminsPage } from './components/dashboard/SuperAdminDashboard/GymAdminsPage'
 import { ActivitiesPage } from './components/dashboard/ActivitiesPage'
 import { MembersPage } from './components/dashboard/MembersPage'
+import { CoachMembersPage } from './components/dashboard/CoachMembersPage'
 import { SchedulePage } from './components/dashboard/SchedulePage'
+import { CoachSchedulePage } from './components/dashboard/CoachSchedulePage'
 import { SuperAdminAnalyticsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminAnalyticsPage'
 import { SuperAdminSettingsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminSettingsPage'
 import { Toaster } from 'sonner'
@@ -27,7 +29,9 @@ function App() {
             <Route path="/dashboard/gyms/:gymId/admins" element={<GymAdminsPage />} />
             <Route path="/dashboard/activities" element={<ActivitiesPage />} />
             <Route path="/dashboard/members" element={<MembersPage />} />
+            <Route path="/dashboard/my-members" element={<CoachMembersPage />} />
             <Route path="/dashboard/schedule" element={<SchedulePage />} />
+            <Route path="/dashboard/schedules" element={<CoachSchedulePage />} />
             <Route path="/dashboard/analytics" element={<SuperAdminAnalyticsPage />} />
             <Route path="/dashboard/settings" element={<SuperAdminSettingsPage />} />
           </Route>
