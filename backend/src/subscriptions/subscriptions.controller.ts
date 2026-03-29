@@ -55,6 +55,15 @@ export class SubscriptionsController {
     return this.subscriptionsService.findByMember(memberId, req.user.gymId);
   }
 
+  @Get('me')
+  @Roles(UserRole.MEMBER)
+  findMySubscriptions(@Request() req: any) {
+    return this.subscriptionsService.findByMember(
+      req.user.userId,
+      req.user.gymId,
+    );
+  }
+
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.COACH)
   findOne(@Request() req: any, @Param('id') id: string) {

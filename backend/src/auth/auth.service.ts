@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { UserRole } from 'src/users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -41,7 +42,7 @@ export class AuthService {
     const payload = {
       email: user.email,
       sub: user._id,
-      role: user.isMember ? 'MEMBER' : user.role,
+      role: user.isMember ? UserRole.MEMBER : user.role,
       gymId: user.gymId || null,
     };
 
@@ -59,8 +60,9 @@ export class AuthService {
   }
 
   async getProfile(userId: string, role: string) {
-    if (role === 'MEMBER') {
-      return this.membersService.findById(userId);
+    if (role === UserRole.MEMBER) {
+      const member = await this.membersService.findById(userId);
+      return { ...member.toObject(), role: UserRole.MEMBER };
     }
     return this.usersService.findOne(userId);
   }

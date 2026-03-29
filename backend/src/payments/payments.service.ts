@@ -81,6 +81,43 @@ export class PaymentsService {
     return payment.save();
   }
 
+  async findByMember(memberId: string, gymId?: string): Promise<Payment[]> {
+    const subscriptionFilter: Record<string, any> = {
+      member: new Types.ObjectId(memberId),
+    };
+
+    if (gymId) {
+      subscriptionFilter.gymId = new Types.ObjectId(gymId);
+    }
+
+    const subscriptions = await this.subscriptionModel
+      .find(subscriptionFilter)
+      .select('_id')
+      .exec();
+
+    if (subscriptions.length === 0) {
+      return [];
+    }
+
+    const subscriptionIds = subscriptions.map((sub) => sub._id);
+
+    return this.paymentModel
+      .find({ subscription: { $in: subscriptionIds } })
+      .populate({
+        path: 'subscription',
+        populate: [
+          { path: 'member', select: 'firstName lastName email' },
+          {
+            path: 'activity',
+            select: 'name monthlyPrice schedule coach',
+            populate: { path: 'coach', select: 'firstName lastName email' },
+          },
+        ],
+      })
+      .sort({ paidAt: -1 })
+      .exec();
+  }
+
   async findAll(gymId?: string): Promise<Payment[]> {
     const filter = gymId ? { gymId: new Types.ObjectId(gymId) } : {};
     return this.paymentModel

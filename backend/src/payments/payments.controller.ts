@@ -42,4 +42,10 @@ export class PaymentsController {
     }
     return this.paymentsService.findUnpaid(req.user.gymId);
   }
+
+  @Get('me')
+  @Roles(UserRole.MEMBER)
+  findMyPayments(@Request() req: any) {
+    return this.paymentsService.findByMember(req.user.userId, req.user.gymId);
+  }
 }

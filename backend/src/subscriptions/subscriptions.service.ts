@@ -141,7 +141,11 @@ export class SubscriptionsService {
         member: new Types.ObjectId(memberId),
         gymId: new Types.ObjectId(gymId),
       })
-      .populate('activity', 'name monthlyPrice schedule')
+      .populate({
+        path: 'activity',
+        select: 'name monthlyPrice schedule coach',
+        populate: { path: 'coach', select: 'firstName lastName email' },
+      })
       .exec();
   }
 
