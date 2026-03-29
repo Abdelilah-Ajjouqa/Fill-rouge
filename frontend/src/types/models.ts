@@ -59,3 +59,28 @@ export interface Member {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type SubscriptionStatus = 'active' | 'expired' | 'cancelled';
+
+export interface Subscription {
+  _id: string;
+  gymId: string;
+  member: string | Member;
+  activity: string | Activity;
+  startDate: string;
+  endDate: string;
+  status: SubscriptionStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Payment {
+  _id: string;
+  gymId: string;
+  subscription: string | Subscription;
+  amount: number;
+  amountDue: number;
+  paidAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
