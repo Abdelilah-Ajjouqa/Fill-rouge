@@ -8,6 +8,7 @@ import { GymAdminsPage } from './components/dashboard/SuperAdminDashboard/GymAdm
 import { ActivitiesPage } from './components/dashboard/ActivitiesPage'
 import { SuperAdminSchedulePage } from './components/dashboard/SuperAdminDashboard/SuperAdminSchedulePage'
 import { SuperAdminAnalyticsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminAnalyticsPage'
+import { SuperAdminSettingsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminSettingsPage'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Route path="/dashboard/activities" element={<ActivitiesPage />} />
             <Route path="/dashboard/schedule" element={<SuperAdminSchedulePage />} />
             <Route path="/dashboard/analytics" element={<SuperAdminAnalyticsPage />} />
+            <Route path="/dashboard/settings" element={<SuperAdminSettingsPage />} />
           </Route>
         </Route>
       </Routes>
