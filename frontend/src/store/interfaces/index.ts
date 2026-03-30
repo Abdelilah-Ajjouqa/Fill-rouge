@@ -1,5 +1,5 @@
 import type { User } from "../../types/auth";
-import type { Activity, Gym, Member, Payment, Subscription } from "../../types/models";
+import type { Activity, Gym, Member, Payment, ScheduleSlot, Subscription } from "../../types/models";
 
 // Auth Interfaces
 export interface AuthState {
@@ -43,6 +43,7 @@ export interface ActivityInput {
     hallId: string;
     monthlyPrice: number;
     maxCapacity: number;
+    schedule: ScheduleSlot[];
 }
 
 export interface ActivitiesState {

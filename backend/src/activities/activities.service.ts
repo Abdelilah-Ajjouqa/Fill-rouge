@@ -66,6 +66,10 @@ export class ActivitiesService {
   }
 
   private validateScheduleSlots(slots: ScheduleSlotLike[]) {
+    if (!slots.length) {
+      throw new BadRequestException('At least one schedule slot is required.');
+    }
+
     for (const slot of slots) {
       const start = parseTimeToMinutes(slot.startTime);
       const end = parseTimeToMinutes(slot.endTime);
@@ -253,6 +257,8 @@ export class ActivitiesService {
       this.ensureHallCapacity(nextMaxCapacity, hall.capacity);
     }
 
+    this.validateScheduleSlots(nextSchedule);
+
     const shouldValidateScheduleConflicts = Boolean(
       updateActivityDto.schedule ||
       updateActivityDto.hallId ||
@@ -260,7 +266,6 @@ export class ActivitiesService {
     );
 
     if (shouldValidateScheduleConflicts) {
-      this.validateScheduleSlots(nextSchedule);
       await this.ensureNoScheduleConflicts({
         gymId,
         hallId: nextHallId,

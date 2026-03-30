@@ -8,7 +8,7 @@ import api from '../../api/axios';
 import type { RootState, AppDispatch } from '../../store/store';
 import { createActivity, fetchActivities, updateActivity } from '../../store/slices/activitiesSlice';
 import { createUser, fetchUsers } from '../../store/slices/usersSlice';
-import type { Activity, Gym, Hall } from '../../types/models';
+import type { Activity, Gym, Hall, ScheduleSlot } from '../../types/models';
 import type { User } from '../../types/auth';
 import { CoachCreateModal } from './modals/CoachCreateModal';
 import type { CoachFormState } from './modals/CoachCreateModal';
@@ -34,6 +34,60 @@ const resolveCoachId = (activity: Activity | null) => {
     return activity.coach?._id || '';
 };
 
+const DAY_OPTIONS = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+];
+
+const getDefaultScheduleSlot = (): ScheduleSlot => ({
+    day: 'Monday',
+    startTime: '09:00',
+    endTime: '10:00',
+});
+
+const parseTimeToMinutes = (time: string) => {
+    const [hourText, minuteText] = time.split(':');
+    const hour = Number(hourText);
+    const minute = Number(minuteText);
+
+    if (!Number.isInteger(hour) || !Number.isInteger(minute)) {
+        return null;
+    }
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+        return null;
+    }
+
+    return hour * 60 + minute;
+};
+
+const scheduleSlotsOverlap = (left: ScheduleSlot, right: ScheduleSlot) => {
+    if (left.day !== right.day) {
+        return false;
+    }
+
+    const leftStart = parseTimeToMinutes(left.startTime);
+    const leftEnd = parseTimeToMinutes(left.endTime);
+    const rightStart = parseTimeToMinutes(right.startTime);
+    const rightEnd = parseTimeToMinutes(right.endTime);
+
+    if (
+        leftStart === null ||
+        leftEnd === null ||
+        rightStart === null ||
+        rightEnd === null
+    ) {
+        return false;
+    }
+
+    return leftStart < rightEnd && rightStart < leftEnd;
+};
+
 const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: ActivityModalProps) => {
     const dispatch = useDispatch<AppDispatch>();
     const [name, setName] = useState('');
@@ -41,6 +95,7 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
     const [hallId, setHallId] = useState('');
     const [monthlyPrice, setMonthlyPrice] = useState(0);
     const [maxCapacity, setMaxCapacity] = useState(1);
+    const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([getDefaultScheduleSlot()]);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -56,6 +111,15 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
         setHallId(defaultHallId);
         setMonthlyPrice(activity?.monthlyPrice ?? 0);
         setMaxCapacity(activity?.maxCapacity ?? Math.max(1, halls[0]?.capacity ?? 1));
+        setScheduleSlots(
+            activity?.schedule?.length
+                ? activity.schedule.map((slot) => ({
+                    day: slot.day,
+                    startTime: slot.startTime,
+                    endTime: slot.endTime,
+                }))
+                : [getDefaultScheduleSlot()],
+        );
     }, [activity, halls, coaches, isOpen]);
 
     if (!isOpen) {
@@ -66,6 +130,27 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
     const effectiveCapacity = selectedHall
         ? Math.min(Number(maxCapacity) || 0, selectedHall.capacity)
         : Number(maxCapacity) || 0;
+
+    const updateScheduleSlot = (index: number, field: keyof ScheduleSlot, value: string) => {
+        setScheduleSlots((prev) => prev.map((slot, slotIndex) => (
+            slotIndex === index
+                ? { ...slot, [field]: value }
+                : slot
+        )));
+    };
+
+    const addScheduleSlot = () => {
+        setScheduleSlots((prev) => [...prev, getDefaultScheduleSlot()]);
+    };
+
+    const removeScheduleSlot = (index: number) => {
+        setScheduleSlots((prev) => {
+            if (prev.length <= 1) {
+                return prev;
+            }
+            return prev.filter((_, slotIndex) => slotIndex !== index);
+        });
+    };
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
@@ -93,12 +178,53 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
             return;
         }
 
+        if (!scheduleSlots.length) {
+            toast.error('At least one schedule slot is required.');
+            return;
+        }
+
+        const normalizedSchedule = scheduleSlots.map((slot) => ({
+            day: slot.day.trim(),
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+        }));
+
+        if (normalizedSchedule.some((slot) => !slot.day || !slot.startTime || !slot.endTime)) {
+            toast.error('Please complete all schedule fields.');
+            return;
+        }
+
+        for (const slot of normalizedSchedule) {
+            const start = parseTimeToMinutes(slot.startTime);
+            const end = parseTimeToMinutes(slot.endTime);
+
+            if (start === null || end === null) {
+                toast.error('Invalid schedule time format.');
+                return;
+            }
+
+            if (start >= end) {
+                toast.error('Schedule start time must be before end time.');
+                return;
+            }
+        }
+
+        for (let i = 0; i < normalizedSchedule.length; i += 1) {
+            for (let j = i + 1; j < normalizedSchedule.length; j += 1) {
+                if (scheduleSlotsOverlap(normalizedSchedule[i], normalizedSchedule[j])) {
+                    toast.error('Schedule contains overlapping slots.');
+                    return;
+                }
+            }
+        }
+
         const payload = {
             name: name.trim(),
             coach: coachId,
             hallId,
             monthlyPrice: priceValue,
             maxCapacity: capacityValue,
+            schedule: normalizedSchedule,
         };
 
         setIsSaving(true);
@@ -271,6 +397,63 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
                                 <p className="text-[10px] text-white/40 mt-1">
                                     Effective capacity: {effectiveCapacity}
                                 </p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60">
+                                    Schedule Slots *
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={addScheduleSlot}
+                                    className="text-[10px] font-bold uppercase tracking-widest px-3 py-2 border border-white/10 text-white/60 hover:text-white hover:border-brand/40 transition-colors"
+                                >
+                                    Add Slot
+                                </button>
+                            </div>
+
+                            <div className="space-y-3">
+                                {scheduleSlots.map((slot, index) => (
+                                    <div key={`${slot.day}-${index}`} className="bg-slate-950 border border-white/10 p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="text-[10px] uppercase tracking-widest text-white/40">Slot {index + 1}</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeScheduleSlot(index)}
+                                                className="text-[10px] font-bold uppercase tracking-widest text-white/40 hover:text-red-300 transition-colors disabled:opacity-40"
+                                                disabled={scheduleSlots.length === 1}
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                                            <select
+                                                value={slot.day}
+                                                onChange={(event) => updateScheduleSlot(index, 'day', event.target.value)}
+                                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                            >
+                                                {DAY_OPTIONS.map((day) => (
+                                                    <option key={day} value={day}>{day}</option>
+                                                ))}
+                                            </select>
+                                            <input
+                                                type="time"
+                                                value={slot.startTime}
+                                                onChange={(event) => updateScheduleSlot(index, 'startTime', event.target.value)}
+                                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                            />
+                                            <input
+                                                type="time"
+                                                value={slot.endTime}
+                                                onChange={(event) => updateScheduleSlot(index, 'endTime', event.target.value)}
+                                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
