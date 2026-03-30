@@ -41,33 +41,33 @@ export class MembersService {
   }
 
   async findByCoach(coachId: string, gymId: string) {
-    // 1. Find all activities assigned to this coach in this gym
+    // 1. Fetch all activities assigned to this coach (IDs only)
     const activities = await this.activityModel
       .find({
         coach: new Types.ObjectId(coachId),
         gymId: new Types.ObjectId(gymId),
       })
+      .select('_id')
       .exec();
 
-    if (activities.length === 0) return [];
-
+    if (!activities.length) return [];
     const activityIds = activities.map((a) => a._id);
 
-    // 2. Find all active subscriptions for those activities
+    // 2. Fetch all active subscriptions tied to those activities (Member IDs only)
     const subscriptions = await this.subscriptionModel
       .find({ activity: { $in: activityIds }, status: 'active' })
+      .select('member')
       .exec();
 
-    // 3. Extract unique member IDs
-    const memberIds = [
-      ...new Set(subscriptions.map((s) => s.member.toString())),
-    ];
+    if (!subscriptions.length) return [];
+    const memberIds = [...new Set(subscriptions.map((s) => String(s.member)))];
 
-    if (memberIds.length === 0) return [];
-
-    // 4. Return only those members
+    // 3. Fetch the actual members using the collapsed unique IDs
     return this.memberModel
-      .find({ _id: { $in: memberIds }, gymId: new Types.ObjectId(gymId) })
+      .find({
+        _id: { $in: memberIds },
+        gymId: new Types.ObjectId(gymId),
+      })
       .select('-passwordHash')
       .exec();
   }
@@ -81,11 +81,13 @@ export class MembersService {
       .findOne({ _id: id, gymId })
       .select('-passwordHash')
       .exec();
+
     if (!member) {
       throw new NotFoundException(
         `Member with ID "${id}" not found in your gym`,
       );
     }
+
     return member;
   }
 
@@ -97,6 +99,7 @@ export class MembersService {
     if (!member) {
       throw new NotFoundException(`Member not found`);
     }
+
     return member;
   }
 
@@ -126,11 +129,13 @@ export class MembersService {
     const deletedMember = await this.memberModel
       .findOneAndDelete({ _id: id, gymId })
       .exec();
+
     if (!deletedMember) {
       throw new NotFoundException(
         `Member with ID "${id}" not found in your gym`,
       );
     }
+
     return deletedMember;
   }
 }

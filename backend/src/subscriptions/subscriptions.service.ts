@@ -31,40 +31,31 @@ export class SubscriptionsService {
     createSubscriptionDto: CreateSubscriptionDto,
     gymId: string,
   ): Promise<Subscription> {
-    // Verify the activity exists and belongs to this gym
+    const activityId = new Types.ObjectId(createSubscriptionDto.activity);
+    const memberId = new Types.ObjectId(createSubscriptionDto.member);
+    const gymObjId = new Types.ObjectId(gymId);
+
     const activity = await this.activityModel
-      .findOne({
-        _id: createSubscriptionDto.activity,
-        gymId: new Types.ObjectId(gymId),
-      })
+      .findOne({ _id: activityId, gymId: gymObjId })
       .exec();
-
-    if (!activity) {
+    if (!activity)
       throw new NotFoundException('Activity not found in this gym');
-    }
-
-    if (!activity.hallId) {
+    if (!activity.hallId)
       throw new BadRequestException('Activity has no hall assigned');
-    }
 
     const gym = await this.gymModel.findById(gymId).exec();
-    if (!gym) {
-      throw new NotFoundException('Gym not found');
-    }
+    if (!gym) throw new NotFoundException('Gym not found');
 
     const hall = gym.halls?.find(
       (entry) => entry._id?.toString() === activity.hallId?.toString(),
     );
-    if (!hall) {
+    if (!hall)
       throw new BadRequestException('Activity hall not found in this gym');
-    }
 
     const effectiveCapacity = Math.min(activity.maxCapacity, hall.capacity);
-
-    // Check capacity: count active subscriptions for this activity
     const activeCount = await this.subscriptionModel
       .countDocuments({
-        activity: new Types.ObjectId(createSubscriptionDto.activity),
+        activity: activityId,
         status: SubscriptionStatus.ACTIVE,
       })
       .exec();
@@ -75,35 +66,27 @@ export class SubscriptionsService {
       );
     }
 
-    // Check if this member already has an active subscription for this activity
     const existingActive = await this.subscriptionModel
       .findOne({
-        member: new Types.ObjectId(createSubscriptionDto.member),
-        activity: new Types.ObjectId(createSubscriptionDto.activity),
+        member: memberId,
+        activity: activityId,
         status: SubscriptionStatus.ACTIVE,
       })
       .exec();
-
-    if (existingActive) {
+    if (existingActive)
       throw new BadRequestException(
         'This member already has an active subscription for this activity',
       );
-    }
 
-    // Calculate endDate as startDate + 1 month if not provided
     const startDate = new Date(createSubscriptionDto.startDate);
-    let endDate: Date;
-    if (createSubscriptionDto.endDate) {
-      endDate = new Date(createSubscriptionDto.endDate);
-    } else {
-      endDate = new Date(startDate);
-      endDate.setMonth(endDate.getMonth() + 1);
-    }
+    const endDate = createSubscriptionDto.endDate
+      ? new Date(createSubscriptionDto.endDate)
+      : new Date(new Date(startDate).setMonth(startDate.getMonth() + 1));
 
     const subscription = new this.subscriptionModel({
-      gymId: new Types.ObjectId(gymId),
-      member: new Types.ObjectId(createSubscriptionDto.member),
-      activity: new Types.ObjectId(createSubscriptionDto.activity),
+      gymId: gymObjId,
+      member: memberId,
+      activity: activityId,
       startDate,
       endDate,
       status: SubscriptionStatus.ACTIVE,
@@ -156,9 +139,7 @@ export class SubscriptionsService {
       .populate('activity', 'name monthlyPrice')
       .exec();
 
-    if (!subscription) {
-      throw new NotFoundException('Subscription not found');
-    }
+    if (!subscription) throw new NotFoundException('Subscription not found');
     return subscription;
   }
 
@@ -177,9 +158,7 @@ export class SubscriptionsService {
       .populate('activity', 'name monthlyPrice')
       .exec();
 
-    if (!subscription) {
-      throw new NotFoundException('Subscription not found');
-    }
+    if (!subscription) throw new NotFoundException('Subscription not found');
     return subscription;
   }
 }

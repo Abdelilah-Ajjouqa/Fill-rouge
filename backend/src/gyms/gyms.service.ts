@@ -26,6 +26,7 @@ export class GymsService {
         `A gym with the name "${createGymDto.name}" already exists`,
       );
     }
+
     const createdGym = new this.gymModel(createGymDto);
     return createdGym.save();
   }
@@ -36,9 +37,8 @@ export class GymsService {
 
   async findOne(id: string): Promise<Gym> {
     const gym = await this.gymModel.findById(id).exec();
-    if (!gym) {
-      throw new NotFoundException(`Gym with ID "${id}" not found`);
-    }
+
+    if (!gym) throw new NotFoundException(`Gym with ID "${id}" not found`);
     return gym;
   }
 
@@ -46,24 +46,22 @@ export class GymsService {
     const updatedGym = await this.gymModel
       .findByIdAndUpdate(id, updateGymDto, { new: true })
       .exec();
-    if (!updatedGym) {
+
+    if (!updatedGym)
       throw new NotFoundException(`Gym with ID "${id}" not found`);
-    }
     return updatedGym;
   }
 
   async remove(id: string): Promise<Gym> {
     const gym = await this.gymModel.findById(id).exec();
-    if (!gym) {
-      throw new NotFoundException(`Gym with ID "${id}" not found`);
-    }
+    if (!gym) throw new NotFoundException(`Gym with ID "${id}" not found`);
 
-    // Keep user accounts but detach them from the deleted gym.
+    // Keep user accounts but detach them from the deleted gym safely
     await this.userModel
       .updateMany({ gymId: gym._id }, { $set: { gymId: null } })
       .exec();
-
     await this.gymModel.findByIdAndDelete(id).exec();
+
     return gym;
   }
 }

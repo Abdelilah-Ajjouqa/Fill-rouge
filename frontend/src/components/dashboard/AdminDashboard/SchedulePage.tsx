@@ -1,7 +1,7 @@
 import { useSelector } from 'react-redux';
-import type { RootState } from '../../store/store';
-import { SuperAdminSchedulePage } from './SuperAdminDashboard/SuperAdminSchedulePage';
-import { MemberSchedulePage } from './MemberSchedulePage';
+import type { RootState } from '../../../store/store';
+import { SuperAdminSchedulePage } from '../SuperAdminDashboard/SuperAdminSchedulePage';
+import { MemberSchedulePage } from '../Member/MemberSchedulePage';
 
 export const SchedulePage = () => {
   const userRole = useSelector((state: RootState) => state.auth.user?.role) || 'MEMBER';

@@ -1,5 +1,5 @@
 import type { Gym } from '../../../../types/models';
-import { GymForm } from '../../GymForm';
+import { GymForm } from '../../AdminDashboard/GymForm';
 
 type EditBtnProps = {
     isOpen: boolean;

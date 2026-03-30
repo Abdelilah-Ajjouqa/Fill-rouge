@@ -5,11 +5,11 @@ import { Dashboard } from './pages/Dashboard'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { DashboardLayout } from './components/layout/DashboardLayout'
 import { GymAdminsPage } from './components/dashboard/SuperAdminDashboard/GymAdminsPage'
-import { ActivitiesPage } from './components/dashboard/ActivitiesPage'
-import { MembersPage } from './components/dashboard/MembersPage'
-import { CoachMembersPage } from './components/dashboard/CoachMembersPage'
-import { SchedulePage } from './components/dashboard/SchedulePage'
-import { CoachSchedulePage } from './components/dashboard/CoachSchedulePage'
+import { ActivitiesPage } from './components/dashboard/AdminDashboard/ActivitiesPage'
+import { MembersPage } from './components/dashboard/AdminDashboard/MembersPage'
+import { CoachMembersPage } from './components/dashboard/Coach/CoachMembersPage'
+import { SchedulePage } from './components/dashboard/AdminDashboard/SchedulePage'
+import { CoachSchedulePage } from './components/dashboard/Coach/CoachSchedulePage'
 import { SuperAdminAnalyticsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminAnalyticsPage'
 import { SuperAdminSettingsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminSettingsPage'
 import { Toaster } from 'sonner'
@@ -21,9 +21,9 @@ function App() {
         {/* public routes */}
         <Route path="/" element={<AuthPage />} />
 
-
         {/* protected routes */}
         <Route element={<ProtectedRoute />}>
+
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/gyms/:gymId/admins" element={<GymAdminsPage />} />
@@ -35,9 +35,12 @@ function App() {
             <Route path="/dashboard/analytics" element={<SuperAdminAnalyticsPage />} />
             <Route path="/dashboard/settings" element={<SuperAdminSettingsPage />} />
           </Route>
+
         </Route>
+
       </Routes>
 
+      {/* Toaster for notifications */}
       <Toaster
         richColors
         position="top-right"

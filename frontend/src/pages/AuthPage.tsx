@@ -1,9 +1,9 @@
-import { AuthForm } from '../components/AuthForm';
-import { ImageCarousel } from '../components/ImageCarousel';
+import { AuthForm } from '../components/auth/AuthForm';
+import { ImageCarousel } from '../components/auth/ImageCarousel';
 
 export function AuthPage() {
   return (
-    <div className="flex min-h-screen bg-[#050505]">
+    <div className="flex min-h-screen bg-slate-950">
       {/* Left Side - Auth Form */}
       <div className="flex w-full flex-col lg:w-1/2">
         <AuthForm />

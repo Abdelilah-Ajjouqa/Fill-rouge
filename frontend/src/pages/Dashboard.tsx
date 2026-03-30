@@ -1,9 +1,9 @@
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store/store';
 import { SuperAdminDashboard } from '../components/dashboard/SuperAdminDashboard/SuperAdminDashboard';
-import { AdminDashboard } from '../components/dashboard/AdminDashboard';
-import { CoachDashboard } from '../components/dashboard/CoachDashboard';
-import { MemberDashboard } from '../components/dashboard/MemberDashboard';
+import { AdminDashboard } from '../components/dashboard/AdminDashboard/AdminDashboard';
+import { CoachDashboard } from '../components/dashboard/Coach/CoachDashboard';
+import { MemberDashboard } from '../components/dashboard/Member/MemberDashboard';
 
 export const Dashboard = () => {
     const userRole = useSelector((state: RootState) => state.auth.user?.role) || 'MEMBER';
