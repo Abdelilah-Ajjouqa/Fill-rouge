@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
@@ -10,6 +14,46 @@ type ScheduleSlotLike = {
   day: string;
   startTime: string;
   endTime: string;
+};
+
+const getReferenceId = (value: unknown): string | null => {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' || typeof value === 'bigint') {
+    return String(value);
+  }
+
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const maybeRecord = value as { _id?: unknown; id?: unknown };
+
+  if (typeof maybeRecord._id === 'string') {
+    return maybeRecord._id;
+  }
+
+  if (typeof maybeRecord.id === 'string') {
+    return maybeRecord.id;
+  }
+
+  if (
+    typeof maybeRecord._id === 'number' ||
+    typeof maybeRecord._id === 'bigint'
+  ) {
+    return String(maybeRecord._id);
+  }
+
+  if (
+    typeof maybeRecord.id === 'number' ||
+    typeof maybeRecord.id === 'bigint'
+  ) {
+    return String(maybeRecord.id);
+  }
+
+  return null;
 };
 
 const parseTimeToMinutes = (time: string) => {
@@ -145,7 +189,7 @@ export class ActivitiesService {
             );
           }
 
-          if (String(existingActivity.coach) === coachId) {
+          if (getReferenceId(existingActivity.coach) === coachId) {
             throw new BadRequestException(
               `Coach is already assigned on ${incomingSlot.day} during ${incomingSlot.startTime}-${incomingSlot.endTime}.`,
             );
@@ -218,7 +262,9 @@ export class ActivitiesService {
     updateActivityDto: UpdateActivityDto,
     gymId: string,
   ): Promise<Activity> {
-    const existingActivity = await this.activityModel.findOne({ _id: id, gymId }).exec();
+    const existingActivity = await this.activityModel
+      .findOne({ _id: id, gymId })
+      .exec();
     if (!existingActivity) {
       throw new NotFoundException(
         `Activity with ID "${id}" not found in your gym`,
@@ -233,7 +279,7 @@ export class ActivitiesService {
     const nextHallId =
       updateActivityDto.hallId || existingActivity.hallId?.toString() || '';
     const nextCoachId =
-      updateActivityDto.coach || existingActivity.coach?.toString() || '';
+      updateActivityDto.coach || getReferenceId(existingActivity.coach) || '';
 
     if (!nextHallId) {
       throw new NotFoundException('Hall not found in this gym');
@@ -246,7 +292,8 @@ export class ActivitiesService {
       updateActivityDto.maxCapacity ?? existingActivity.maxCapacity;
     const nextSchedule =
       (updateActivityDto.schedule as ScheduleSlotLike[] | undefined) ??
-      ((existingActivity.schedule as ScheduleSlotLike[] | undefined) ?? []);
+      (existingActivity.schedule as ScheduleSlotLike[] | undefined) ??
+      [];
 
     const hall = this.getGymHallOrThrow(gym, nextHallId);
 

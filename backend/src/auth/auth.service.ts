@@ -60,7 +60,9 @@ export class AuthService {
   }
 
   async getProfile(userId: string, role: string) {
-    if (role === UserRole.MEMBER) {
+    const memberRole = UserRole.MEMBER as string;
+
+    if (role === memberRole) {
       const member = await this.membersService.findById(userId);
       return { ...member.toObject(), role: UserRole.MEMBER };
     }

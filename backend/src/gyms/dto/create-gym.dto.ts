@@ -46,37 +46,40 @@ export class CreateGymDto {
   @IsOptional()
   logo?: string;
 
-    @IsBoolean()
-    @IsOptional()
-    @Transform(({ value }) => value === 'true' || value === true)
-    isActive?: boolean;
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isActive?: boolean;
 
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => HallDto)
-  @Transform(({ value }) => {
-    if (value === undefined || value === null) {
-      return value;
-    }
-
-    let parsed = value;
-    if (typeof value === 'string') {
-      if (!value.trim()) {
-        return [];
-      }
-      try {
-        parsed = JSON.parse(value);
-      } catch {
+  @Transform(
+    ({ value }) => {
+      if (value === undefined || value === null) {
         return value;
       }
-    }
 
-    if (!Array.isArray(parsed)) {
-      return parsed;
-    }
+      let parsed = value;
+      if (typeof value === 'string') {
+        if (!value.trim()) {
+          return [];
+        }
+        try {
+          parsed = JSON.parse(value);
+        } catch {
+          return value;
+        }
+      }
 
-    return plainToInstance(HallDto, parsed);
-  }, { toClassOnly: true })
+      if (!Array.isArray(parsed)) {
+        return parsed;
+      }
+
+      return plainToInstance(HallDto, parsed);
+    },
+    { toClassOnly: true },
+  )
   halls?: HallDto[];
 }
