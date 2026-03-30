@@ -1,5 +1,5 @@
-import { AuthForm } from '../components/AuthForm';
-import { ImageCarousel } from '../components/ImageCarousel';
+import { AuthForm } from '../components/auth/AuthForm';
+import { ImageCarousel } from '../components/auth/ImageCarousel';
 
 export function AuthPage() {
   return (

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import type { AppDispatch, RootState } from '../store/store';
-import { loginUser } from '../store/slices/authSlice';
+import type { AppDispatch, RootState } from '../../store/store';
+import { loginUser } from '../../store/slices/authSlice';
 
 export function AuthForm() {
   const dispatch = useDispatch<AppDispatch>();
