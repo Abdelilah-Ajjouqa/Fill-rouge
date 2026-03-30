@@ -24,14 +24,11 @@ export const AdminDashboard = () => {
 
     return (
         <div className="p-8 space-y-8 animate-fade-in">
-            <div className="flex items-center justify-between">
+            <div>
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Gym Overview</h2>
                     <p className="text-white/40 text-sm mt-1">Live metrics for your facility</p>
                 </div>
-                <button className="bg-brand text-black text-[10px] font-bold uppercase tracking-widest px-4 py-2 hover:bg-white transition-colors border border-brand">
-                    Generate Report
-                </button>
             </div>
 
             {error && (

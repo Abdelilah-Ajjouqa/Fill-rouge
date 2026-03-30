@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, LayoutGrid, Calendar, BarChart3, Settings, ChevronDown, User, Users, LogOut } from 'lucide-react';
+import { Activity, LayoutGrid, Calendar, BarChart3, Settings, User, Users, LogOut } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
@@ -176,18 +176,6 @@ export const DashboardLayout = () => {
                         <h1 className="text-lg font-medium text-white/90">
                             {navItems.find(i => i.path === location.pathname)?.name || 'Dashboard'}
                         </h1>
-                        
-                        {userRole === 'ADMIN' && (
-                            <>
-                                <div className="h-4 w-px bg-white/10"></div>
-                                <div className="relative group">
-                                    <button className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors bg-white/5 px-3 py-1.5 border border-white/10">
-                                        <span className="font-semibold">All Entities</span>
-                                        <ChevronDown className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            </>
-                        )}
                     </div>
                     
                     <div className="flex items-center gap-4">
