@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 
 export interface GymFormProps { gym?: Gym; onSuccess: () => void; onCancel: () => void; }
 
-const resolveGymLogoUrl = (l?: string | null) => l ? (l.startsWith('http') || l.startsWith('data:') ? l : `${import.meta.env.VITE_API_BASE_URL || ''}${l.startsWith('/') ? '' : '/uploads/'}${l}`) : null;
+const resolveGymLogoUrl = (logoString?: string | null) => logoString ? (logoString.startsWith('http') || logoString.startsWith('data:') ? logoString : `${import.meta.env.VITE_API_BASE_URL || ''}${logoString.startsWith('/') ? '' : '/uploads/'}${logoString}`) : null;
 
 export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
     const dispatch = useDispatch<AppDispatch>();
@@ -16,22 +16,22 @@ export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
     
     const [state, setState] = useState({ name: gym?.name || '', address: gym?.address || '', phone: gym?.phone || '' });
     const [isActive, setIsActive] = useState(gym?.isActive ?? true);
-    const [halls, setHalls] = useState<Hall[]>(() => gym?.halls?.map(h => ({ _id: h._id, name: h.name || '', type: h.type || '', capacity: Number.isFinite(h.capacity) ? h.capacity : 1 })) || []);
+    const [halls, setHalls] = useState<Hall[]>(() => gym?.halls?.map(hall => ({ _id: hall._id, name: hall.name || '', type: hall.type || '', capacity: Number.isFinite(hall.capacity) ? hall.capacity : 1 })) || []);
     const [logo, setLogo] = useState<{ file: File | null; preview: string | null }>({ file: null, preview: resolveGymLogoUrl(gym?.logo) });
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
         dispatch(clearGymsError());
         if (!halls.length) return toast.error('Add at least one hall.');
-        if (halls.some(h => !h.name.trim() || !h.type.trim() || !Number.isFinite(h.capacity) || h.capacity < 1)) return toast.error('Fill all hall details.');
+        if (halls.some(hall => !hall.name.trim() || !hall.type.trim() || !Number.isFinite(hall.capacity) || hall.capacity < 1)) return toast.error('Fill all hall details.');
 
-        const fd = new FormData();
-        Object.entries(state).forEach(([k, v]) => fd.append(k, v));
-        fd.append('isActive', String(isActive));
-        fd.append('halls', JSON.stringify(halls.map(h => ({ _id: h._id, name: h.name.trim(), type: h.type.trim(), capacity: Number(h.capacity) }))));
-        if (logo.file) fd.append('logo', logo.file);
+        const formData = new FormData();
+        Object.entries(state).forEach(([key, value]) => formData.append(key, value));
+        formData.append('isActive', String(isActive));
+        formData.append('halls', JSON.stringify(halls.map(hall => ({ _id: hall._id, name: hall.name.trim(), type: hall.type.trim(), capacity: Number(hall.capacity) }))));
+        if (logo.file) formData.append('logo', logo.file);
 
-        const action = gym ? updateGym({ id: gym._id, formData: fd }) : createGym(fd);
+        const action = gym ? updateGym({ id: gym._id, formData }) : createGym(formData);
         const res: any = await dispatch(action as any);
         if (typeof res.type === 'string' && res.type.endsWith('/fulfilled')) {
             toast.success(`Gym ${gym ? 'updated' : 'created'}`);
@@ -39,20 +39,20 @@ export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
         } else toast.error(typeof res.payload === 'string' ? res.payload : 'Operation failed');
     };
 
-    const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const handleFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
         if (file && file.type.startsWith('image/') && file.size <= 2097152) setLogo({ file, preview: URL.createObjectURL(file) });
     };
 
-    const Input = ({ label, k, type, ph, max, ptn, text }: any) => (
+    const Input = ({ label, field, type, placeholder, max, pattern, textContent }: any) => (
         <div>
             <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">{label} *</label>
-            <input type={type} value={state[k as keyof typeof state]} onChange={e => {
-                let v = e.target.value;
-                if (k === 'phone') { v = v.replace(/\D/g, ''); if (v.length > 10) return; }
-                setState(prev => ({ ...prev, [k]: v }));
-            }} required maxLength={max} pattern={ptn} placeholder={ph} className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors" />
-            {text && <p className="text-[10px] text-white/20 mt-1">{text}</p>}
+            <input type={type} value={state[field as keyof typeof state]} onChange={event => {
+                let value = event.target.value;
+                if (field === 'phone') { value = value.replace(/\D/g, ''); if (value.length > 10) return; }
+                setState(prevState => ({ ...prevState, [field]: value }));
+            }} required maxLength={max} pattern={pattern} placeholder={placeholder} className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors" />
+            {textContent && <p className="text-[10px] text-white/20 mt-1">{textContent}</p>}
         </div>
     );
 
@@ -61,28 +61,28 @@ export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
             {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs">{error}</div>}
             
             <div className="space-y-4">
-                <Input label="Gym Name" k="name" type="text" ph="e.g. FitClub Downtown" />
-                <Input label="Address" k="address" type="text" ph="e.g. 123 Main St, Casablanca" />
-                <Input label="Phone Number" k="phone" type="tel" ph="e.g. 0600000000" max={10} ptn="\d{10}" text={`${state.phone.length}/10 digits`} />
+                <Input label="Gym Name" field="name" type="text" placeholder="e.g. FitClub Downtown" />
+                <Input label="Address" field="address" type="text" placeholder="e.g. 123 Main St, Casablanca" />
+                <Input label="Phone Number" field="phone" type="tel" placeholder="e.g. 0600000000" max={10} pattern="\d{10}" textContent={`${state.phone.length}/10 digits`} />
 
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
                         <div><label className="block text-[10px] font-bold uppercase tracking-widest text-white/60">Halls & Capacity *</label><p className="text-[10px] text-white/30 mt-1">Gym capacity equals number of halls.</p></div>
-                        <button type="button" onClick={() => setHalls(p => [...p, { name: '', type: '', capacity: 1 }])} className="text-[10px] font-bold uppercase tracking-widest px-3 py-2 border border-white/10 text-white/60 hover:text-white hover:border-brand/40 transition-colors">Add Hall</button>
+                        <button type="button" onClick={() => setHalls(prevHalls => [...prevHalls, { name: '', type: '', capacity: 1 }])} className="text-[10px] font-bold uppercase tracking-widest px-3 py-2 border border-white/10 text-white/60 hover:text-white hover:border-brand/40 transition-colors">Add Hall</button>
                     </div>
 
                     {!halls.length ? <div className="p-4 border border-dashed border-white/10 text-white/40 text-xs">No halls added.</div> : (
                         <div className="space-y-3">
-                            {halls.map((h, i) => (
-                                <div key={h._id || i} className="bg-slate-950 border border-white/10 p-4">
-                                    <div className="flex justify-between mb-3"><p className="text-[10px] uppercase text-white/40">Hall {i + 1}</p><button type="button" onClick={() => setHalls(p => p.filter((_, idx) => idx !== i))} className="text-white/30 hover:text-red-300"><X className="h-4 w-4" /></button></div>
+                            {halls.map((hall, index) => (
+                                <div key={hall._id || index} className="bg-slate-950 border border-white/10 p-4">
+                                    <div className="flex justify-between mb-3"><p className="text-[10px] uppercase text-white/40">Hall {index + 1}</p><button type="button" onClick={() => setHalls(prevHalls => prevHalls.filter((_, filterIndex) => filterIndex !== index))} className="text-white/30 hover:text-red-300"><X className="h-4 w-4" /></button></div>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                         {[
-                                            { k: 'name', t: 'text', ph: 'Hall name (e.g. A-2)' },
-                                            { k: 'type', t: 'text', ph: 'Type (e.g. Yoga)' },
-                                            { k: 'capacity', t: 'number', ph: 'Capacity' }
-                                        ].map(f => (
-                                            <input key={f.k} type={f.t} min={f.k === 'capacity' ? 1 : undefined} value={(h as any)[f.k]} onChange={e => setHalls(p => p.map((hh, idx) => idx === i ? { ...hh, [f.k]: f.t === 'number' ? Number(e.target.value) : e.target.value } : hh))} placeholder={f.ph} className="w-full bg-slate-950 border border-white/10 p-3 text-xs text-white focus:outline-none focus:border-brand" />
+                                            { field: 'name', type: 'text', placeholder: 'Hall name (e.g. A-2)' },
+                                            { field: 'type', type: 'text', placeholder: 'Type (e.g. Yoga)' },
+                                            { field: 'capacity', type: 'number', placeholder: 'Capacity' }
+                                        ].map(fieldObj => (
+                                            <input key={fieldObj.field} type={fieldObj.type} min={fieldObj.field === 'capacity' ? 1 : undefined} value={(hall as any)[fieldObj.field]} onChange={event => setHalls(prevHalls => prevHalls.map((prevHall, mapIndex) => mapIndex === index ? { ...prevHall, [fieldObj.field]: fieldObj.type === 'number' ? Number(event.target.value) : event.target.value } : prevHall))} placeholder={fieldObj.placeholder} className="w-full bg-slate-950 border border-white/10 p-3 text-xs text-white focus:outline-none focus:border-brand" />
                                         ))}
                                     </div>
                                 </div>
@@ -100,7 +100,7 @@ export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
                     )}
                 </div>
 
-                <div className="flex items-center gap-3 pt-2"><input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="w-4 h-4 bg-slate-950 accent-brand" /><label className="text-sm font-medium text-white/80">Gym is currently active</label></div>
+                <div className="flex items-center gap-3 pt-2"><input type="checkbox" checked={isActive} onChange={event => setIsActive(event.target.checked)} className="w-4 h-4 bg-slate-950 accent-brand" /><label className="text-sm font-medium text-white/80">Gym is currently active</label></div>
             </div>
 
             <div className="flex gap-4 pt-4 border-t border-white/5">
