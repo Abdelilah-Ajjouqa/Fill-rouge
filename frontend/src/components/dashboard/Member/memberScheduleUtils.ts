@@ -1,4 +1,4 @@
-import type { Activity, ScheduleSlot, Subscription } from '../../types/models';
+import type { Activity, ScheduleSlot, Subscription } from '../../../types/models';
 
 export type MemberScheduleEntry = {
   id: string;

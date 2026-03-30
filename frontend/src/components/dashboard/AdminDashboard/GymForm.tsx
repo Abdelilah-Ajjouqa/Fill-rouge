@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { createGym, clearGymsError, updateGym } from '../../store/slices/gymsSlice';
-import type { AppDispatch, RootState } from '../../store/store';
-import type { Gym, Hall } from '../../types/models';
+import { createGym, clearGymsError, updateGym } from '../../../store/slices/gymsSlice';
+import type { AppDispatch, RootState } from '../../../store/store';
+import type { Gym, Hall } from '../../../types/models';
 import { Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 

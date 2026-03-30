@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, User as UserIcon } from 'lucide-react';
-import type { RootState, AppDispatch } from '../../store/store';
-import { fetchMySubscriptions } from '../../store/slices/subscriptionsSlice';
-import { StatCard } from './StatCard';
+import type { RootState, AppDispatch } from '../../../store/store';
+import { fetchMySubscriptions } from '../../../store/slices/subscriptionsSlice';
+import { StatCard } from '../StatCard';
 import {
   buildMemberScheduleEntries,
   getNextMemberSession,

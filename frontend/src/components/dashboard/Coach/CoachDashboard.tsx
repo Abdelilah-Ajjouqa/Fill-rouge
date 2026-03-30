@@ -1,13 +1,13 @@
 import { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Users, Clock, AlertTriangle } from 'lucide-react';
-import type { AppDispatch, RootState } from '../../store/store';
-import { fetchActivities } from '../../store/slices/activitiesSlice';
-import { fetchMembers } from '../../store/slices/membersSlice';
-import { fetchPayments } from '../../store/slices/paymentsSlice';
-import { fetchSubscriptions } from '../../store/slices/subscriptionsSlice';
-import type { Payment, ScheduleSlot, Subscription } from '../../types/models';
-import { StatCard } from './StatCard';
+import type { AppDispatch, RootState } from '../../../store/store';
+import { fetchActivities } from '../../../store/slices/activitiesSlice';
+import { fetchMembers } from '../../../store/slices/membersSlice';
+import { fetchPayments } from '../../../store/slices/paymentsSlice';
+import { fetchSubscriptions } from '../../../store/slices/subscriptionsSlice';
+import type { Payment, ScheduleSlot, Subscription } from '../../../types/models';
+import { StatCard } from '../StatCard';
 
 type CoachSession = {
     id: string;

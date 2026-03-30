@@ -4,14 +4,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { Edit2, Plus, Users, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '../../api/axios';
-import type { RootState, AppDispatch } from '../../store/store';
-import { createActivity, fetchActivities, updateActivity } from '../../store/slices/activitiesSlice';
-import { createUser, fetchUsers } from '../../store/slices/usersSlice';
-import type { Activity, Gym, Hall, ScheduleSlot } from '../../types/models';
-import type { User } from '../../types/auth';
-import { CoachCreateModal } from './modals/CoachCreateModal';
-import type { CoachFormState } from './modals/CoachCreateModal';
+import api from '../../../api/axios';
+import type { RootState, AppDispatch } from '../../../store/store';
+import { createActivity, fetchActivities, updateActivity } from '../../../store/slices/activitiesSlice';
+import { createUser, fetchUsers } from '../../../store/slices/usersSlice';
+import type { Activity, Gym, Hall, ScheduleSlot } from '../../../types/models';
+import type { User } from '../../../types/auth';
+import { CoachCreateModal, type CoachFormState } from '../modals/CoachCreateModal';
 
 type ActivityModalProps = {
     isOpen: boolean;

@@ -3,16 +3,16 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Edit2, Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import type { RootState, AppDispatch } from '../../store/store';
+import type { RootState, AppDispatch } from '../../../store/store';
 import {
   fetchMembers,
   createMember,
   updateMember,
   clearMembersError,
-} from '../../store/slices/membersSlice';
-import type { MemberInput } from '../../store/interfaces';
-import type { Member } from '../../types/models';
-import { StatCard } from './StatCard';
+} from '../../../store/slices/membersSlice';
+import type { MemberInput } from '../../../store/interfaces';
+import type { Member } from '../../../types/models';
+import { StatCard } from '../StatCard';
 
 type MemberFormState = {
   firstName: string;

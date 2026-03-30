@@ -1,4 +1,4 @@
-import { GymForm } from '../../GymForm';
+import { GymForm } from '../../AdminDashboard/GymForm';
 
 type CreateGymModalProps = {
     isOpen: boolean;

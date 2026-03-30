@@ -1,6 +1,6 @@
 import { DollarSign, Users, Award, AlertCircle } from 'lucide-react';
-import { StatCard } from './StatCard';
-import { useAdminDashboard } from './hooks/useAdminDashboard';
+import { StatCard } from '../StatCard';
+import { useAdminDashboard } from '../hooks/useAdminDashboard';
 
 export const AdminDashboard = () => {
     const { data, isLoading, error } = useAdminDashboard();

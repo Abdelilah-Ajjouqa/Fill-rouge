@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Activity as ActivityIcon, CreditCard, Calendar } from 'lucide-react';
-import type { RootState, AppDispatch } from '../../store/store';
-import { fetchMyPayments } from '../../store/slices/paymentsSlice';
-import { fetchMySubscriptions } from '../../store/slices/subscriptionsSlice';
-import type { Payment } from '../../types/models';
+import type { RootState, AppDispatch } from '../../../store/store';
+import { fetchMyPayments } from '../../../store/slices/paymentsSlice';
+import { fetchMySubscriptions } from '../../../store/slices/subscriptionsSlice';
+import type { Payment } from '../../../types/models';
 import { getNextMemberSession } from './memberScheduleUtils';
 
 const formatMoney = (value: number) => `${value.toLocaleString()} DH`;

@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, AlertTriangle } from 'lucide-react';
-import type { RootState, AppDispatch } from '../../store/store';
-import { fetchActivities } from '../../store/slices/activitiesSlice';
-import type { ScheduleSlot } from '../../types/models';
-import { StatCard } from './StatCard';
+import type { RootState, AppDispatch } from '../../../store/store';
+import { fetchActivities } from '../../../store/slices/activitiesSlice';
+import type { ScheduleSlot } from '../../../types/models';
+import { StatCard } from '../StatCard';
 
 type ScheduleEntry = {
   id: string;
