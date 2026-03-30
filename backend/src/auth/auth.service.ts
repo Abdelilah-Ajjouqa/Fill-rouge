@@ -4,8 +4,8 @@ import { MembersService } from '../members/members.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { UserRole } from 'src/users/schemas/user.schema';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { UserRole } from '../users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -16,16 +16,16 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, pass: string): Promise<any> {
-    // First, try to find in Users collection (Super Admin, Admin, Coach)
     const user = await this.usersService.findByEmail(email);
-    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
+
+    if (user && await bcrypt.compare(pass, user.passwordHash)) {
       const { passwordHash: _ph, ...result } = user.toObject();
       return { ...result, isMember: false };
     }
 
-    // If not found, try the Members collection
     const member = await this.membersService.findByEmail(email);
-    if (member && (await bcrypt.compare(pass, member.passwordHash))) {
+
+    if (member && await bcrypt.compare(pass, member.passwordHash)) {
       const { passwordHash: _ph, ...result } = member.toObject();
       return { ...result, isMember: true };
     }
@@ -35,23 +35,23 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    
+    if (!user) throw new UnauthorizedException('Invalid credentials');
 
+    const role = user.isMember ? UserRole.MEMBER : user.role;
+    
     const payload = {
       email: user.email,
       sub: user._id,
-      role: user.isMember ? UserRole.MEMBER : user.role,
+      role,
       gymId: user.gymId || null,
     };
 
-    // Remove the helper flag before sending to client
-    const { isMember: _isMember, ...userData } = user;
+    const { isMember: _, ...userData } = user;
 
     return {
       access_token: this.jwtService.sign(payload),
-      user: { ...userData, role: payload.role },
+      user: { ...userData, role },
     };
   }
 
@@ -60,12 +60,11 @@ export class AuthService {
   }
 
   async getProfile(userId: string, role: string) {
-    const memberRole = UserRole.MEMBER as string;
-
-    if (role === memberRole) {
+    if (role === UserRole.MEMBER as string) {
       const member = await this.membersService.findById(userId);
       return { ...member.toObject(), role: UserRole.MEMBER };
     }
+    
     return this.usersService.findOne(userId);
   }
 }
