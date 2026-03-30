@@ -18,14 +18,11 @@ export class GymsService {
   ) {}
 
   async create(createGymDto: CreateGymDto): Promise<Gym> {
-    const existing = await this.gymModel
-      .findOne({ name: createGymDto.name })
-      .exec();
+    const existing = await this.gymModel.findOne({ name: createGymDto.name }).exec();
     if (existing) {
-      throw new ConflictException(
-        `A gym with the name "${createGymDto.name}" already exists`,
-      );
+      throw new ConflictException(`A gym with the name "${createGymDto.name}" already exists`);
     }
+
     const createdGym = new this.gymModel(createGymDto);
     return createdGym.save();
   }
@@ -36,34 +33,26 @@ export class GymsService {
 
   async findOne(id: string): Promise<Gym> {
     const gym = await this.gymModel.findById(id).exec();
-    if (!gym) {
-      throw new NotFoundException(`Gym with ID "${id}" not found`);
-    }
+    
+    if (!gym) throw new NotFoundException(`Gym with ID "${id}" not found`);
     return gym;
   }
 
   async update(id: string, updateGymDto: UpdateGymDto): Promise<Gym> {
-    const updatedGym = await this.gymModel
-      .findByIdAndUpdate(id, updateGymDto, { new: true })
-      .exec();
-    if (!updatedGym) {
-      throw new NotFoundException(`Gym with ID "${id}" not found`);
-    }
+    const updatedGym = await this.gymModel.findByIdAndUpdate(id, updateGymDto, { new: true }).exec();
+    
+    if (!updatedGym) throw new NotFoundException(`Gym with ID "${id}" not found`);
     return updatedGym;
   }
 
   async remove(id: string): Promise<Gym> {
     const gym = await this.gymModel.findById(id).exec();
-    if (!gym) {
-      throw new NotFoundException(`Gym with ID "${id}" not found`);
-    }
+    if (!gym) throw new NotFoundException(`Gym with ID "${id}" not found`);
 
-    // Keep user accounts but detach them from the deleted gym.
-    await this.userModel
-      .updateMany({ gymId: gym._id }, { $set: { gymId: null } })
-      .exec();
-
+    // Keep user accounts but detach them from the deleted gym safely
+    await this.userModel.updateMany({ gymId: gym._id }, { $set: { gymId: null } }).exec();
     await this.gymModel.findByIdAndDelete(id).exec();
+    
     return gym;
   }
 }
