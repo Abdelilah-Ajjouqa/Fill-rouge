@@ -2,8 +2,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { GymAdminListSection } from './Helpers/GymAdminListSection';
 import { GymAdminCreateModal } from './Helpers/GymAdminCreateModal';
 import { GymAdminEditModal } from './Helpers/GymAdminEditModal';
-import { useGymAdminActions } from './hooks/useGymAdminActions';
-import { useGymAdmins } from './hooks/useGymAdmins';
+import { useGymAdminActions } from '../../../hooks/useGymAdminActions';
+import { useGymAdmins } from '../../../hooks/useGymAdmins';
 
 export const GymAdminsPage = () => {
     const { gymId } = useParams();

@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import type { RootState, AppDispatch } from '../../../../store/store';
-import { fetchUsers } from '../../../../store/slices/usersSlice';
-import type { User } from '../../../../types/auth';
+import type { RootState, AppDispatch } from '../store/store';
+import { fetchUsers } from '../store/slices/usersSlice';
+import type { User } from '../types/auth';
 
 type UseGymAdminsResult = {
     admins: User[];
