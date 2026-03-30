@@ -25,43 +25,32 @@ export class PaymentsService {
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
   ) {}
 
-  async create(
-    createPaymentDto: CreatePaymentDto,
-    gymId: string,
-  ): Promise<Payment> {
-    const subscription = await this.subscriptionModel
-      .findOne({
-        _id: createPaymentDto.subscription,
-        gymId: new Types.ObjectId(gymId),
-      })
-      .exec();
+  async create(createPaymentDto: CreatePaymentDto, gymId: string): Promise<Payment> {
+    const subscriptionId = new Types.ObjectId(createPaymentDto.subscription);
+    const gymObjectId = new Types.ObjectId(gymId);
 
+    const subscription = await this.subscriptionModel
+      .findOne({ _id: subscriptionId, gymId: gymObjectId })
+      .exec();
+    
     if (!subscription) {
       throw new NotFoundException('Subscription not found in this gym');
     }
 
-    // Get the activity to know the monthly price
-    const activity = await this.activityModel
-      .findById(subscription.activity)
-      .exec();
+    const activity = await this.activityModel.findById(subscription.activity).exec();
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
 
-    // Check if already paid for this subscription
     const existingPayment = await this.paymentModel
-      .findOne({
-        subscription: new Types.ObjectId(createPaymentDto.subscription),
-      })
+      .findOne({ subscription: subscriptionId })
       .exec();
 
     if (existingPayment) {
       throw new BadRequestException('This subscription is already paid');
     }
 
-    // Full payment only — amount must equal the monthly price
     const amountDue = activity.monthlyPrice;
-
     if (createPaymentDto.amount !== amountDue) {
       throw new BadRequestException(
         `Full payment required. Amount must be exactly ${amountDue} DH`,
@@ -69,35 +58,22 @@ export class PaymentsService {
     }
 
     const payment = new this.paymentModel({
-      gymId: new Types.ObjectId(gymId),
-      subscription: new Types.ObjectId(createPaymentDto.subscription),
+      gymId: gymObjectId,
+      subscription: subscriptionId,
       amount: amountDue,
       amountDue,
-      paidAt: createPaymentDto.paidAt
-        ? new Date(createPaymentDto.paidAt)
-        : new Date(),
+      paidAt: createPaymentDto.paidAt ? new Date(createPaymentDto.paidAt) : new Date(),
     });
 
     return payment.save();
   }
 
   async findByMember(memberId: string, gymId?: string): Promise<Payment[]> {
-    const subscriptionFilter: Record<string, any> = {
-      member: new Types.ObjectId(memberId),
-    };
+    const filter: any = { member: new Types.ObjectId(memberId) };
+    if (gymId) filter.gymId = new Types.ObjectId(gymId);
 
-    if (gymId) {
-      subscriptionFilter.gymId = new Types.ObjectId(gymId);
-    }
-
-    const subscriptions = await this.subscriptionModel
-      .find(subscriptionFilter)
-      .select('_id')
-      .exec();
-
-    if (subscriptions.length === 0) {
-      return [];
-    }
+    const subscriptions = await this.subscriptionModel.find(filter).select('_id').exec();
+    if (!subscriptions.length) return [];
 
     const subscriptionIds = subscriptions.map((sub) => sub._id);
 
@@ -134,32 +110,33 @@ export class PaymentsService {
   }
 
   async findUnpaid(gymId?: string) {
-    // Find active subscriptions that have no payment record
-    const subscriptionFilter: Record<string, any> = { status: 'active' };
-    if (gymId) {
-      subscriptionFilter.gymId = new Types.ObjectId(gymId);
-    }
+    const filter: any = { status: 'active' };
+    if (gymId) filter.gymId = new Types.ObjectId(gymId);
+
+    // 1. Fetch all active subscriptions across the system/gym natively
     const subscriptions = await this.subscriptionModel
-      .find(subscriptionFilter)
+      .find(filter)
       .populate('member', 'firstName lastName email phone')
       .populate('activity', 'name monthlyPrice')
       .exec();
 
-    const unpaid: Array<{ subscription: any; amountDue: number }> = [];
+    if (!subscriptions.length) return [];
 
-    for (const sub of subscriptions) {
-      const payment = await this.paymentModel
-        .findOne({ subscription: sub._id })
-        .exec();
+    // 2. Batch fetch ALL payments tied to these active subscriptions
+    const activeSubIds = subscriptions.map((s) => s._id);
+    const existingPayments = await this.paymentModel
+      .find({ subscription: { $in: activeSubIds } })
+      .select('subscription')
+      .exec();
 
-      if (!payment) {
-        unpaid.push({
-          subscription: sub,
-          amountDue: (sub.activity as any).monthlyPrice,
-        });
-      }
-    }
+    const paidSubIds = new Set(existingPayments.map((p) => String(p.subscription)));
 
-    return unpaid;
+    // 3. Filter natively in memory (Eliminates the N+1 database queries)
+    return subscriptions
+      .filter((sub) => !paidSubIds.has(String(sub._id)))
+      .map((sub) => ({
+        subscription: sub,
+        amountDue: (sub.activity as any).monthlyPrice,
+      }));
   }
 }
