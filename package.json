@@ -1,0 +1,10 @@
+{
+  "name": "fill-rouge",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "npm --prefix backend run lint",
+    "lint:frontend": "npm --prefix frontend run lint"
+  }
+}
