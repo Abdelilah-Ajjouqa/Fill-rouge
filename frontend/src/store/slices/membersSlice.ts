@@ -26,6 +26,22 @@ export const fetchMembers = createAsyncThunk<Member[], void, { rejectValue: stri
     }
 );
 
+// Thunk to fetch members by gym (Super Admin)
+export const fetchMembersByGym = createAsyncThunk<Member[], string, { rejectValue: string }>(
+    'members/fetchMembersByGym',
+    async (gymId, { rejectWithValue }) => {
+        try {
+            const response = await api.get<Member[]>('/members', { params: { gymId } });
+            return response.data;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                return rejectWithValue(error.response?.data?.message || 'Failed to fetch members');
+            }
+            return rejectWithValue('Failed to fetch members');
+        }
+    }
+);
+
 // Thunk to create a new member (Admin)
 export const createMember = createAsyncThunk<Member, MemberInput, { rejectValue: string }>(
     'members/createMember',
@@ -49,8 +65,11 @@ export const deleteMember = createAsyncThunk<string, string, { rejectValue: stri
         try {
             await api.delete(`/members/${id}`);
             return id;
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || 'Failed to delete member');
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                return rejectWithValue(error.response?.data?.message || 'Failed to delete member');
+            }
+            return rejectWithValue('Failed to delete member');
         }
     }
 );
@@ -66,8 +85,11 @@ export const updateMember = createAsyncThunk<
         try {
             const response = await api.patch<Member>(`/members/${id}`, data);
             return response.data;
-        } catch (err: any) {
-            return rejectWithValue(err.response?.data?.message || 'Failed to update member');
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                return rejectWithValue(error.response?.data?.message || 'Failed to update member');
+            }
+            return rejectWithValue('Failed to update member');
         }
     }
 );
@@ -91,6 +113,19 @@ const membersSlice = createSlice({
             state.members = action.payload;
         });
         builder.addCase(fetchMembers.rejected, (state, action) => {
+            state.isLoading = false;
+            state.error = action.payload as string;
+        });
+
+        builder.addCase(fetchMembersByGym.pending, (state) => {
+            state.isLoading = true;
+            state.error = null;
+        });
+        builder.addCase(fetchMembersByGym.fulfilled, (state, action) => {
+            state.isLoading = false;
+            state.members = action.payload;
+        });
+        builder.addCase(fetchMembersByGym.rejected, (state, action) => {
             state.isLoading = false;
             state.error = action.payload as string;
         });

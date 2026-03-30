@@ -1,9 +1,9 @@
 import {
   IsArray,
+  ArrayMinSize,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   IsString,
   Min,
   ValidateNested,
@@ -31,6 +31,10 @@ export class CreateActivityDto {
 
   @IsMongoId()
   @IsNotEmpty()
+  hallId: string;
+
+  @IsMongoId()
+  @IsNotEmpty()
   coach: string;
 
   @IsNumber()
@@ -42,8 +46,8 @@ export class CreateActivityDto {
   maxCapacity: number;
 
   @IsArray()
-  @IsOptional()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => ScheduleSlotDto)
-  schedule?: ScheduleSlotDto[];
+  schedule: ScheduleSlotDto[];
 }

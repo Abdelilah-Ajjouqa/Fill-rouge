@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -25,14 +26,26 @@ export class PaymentsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.COACH)
-  findAll(@Request() req: any) {
+  @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  findAll(@Request() req: any, @Query('gymId') gymId?: string) {
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      return this.paymentsService.findAll(gymId);
+    }
     return this.paymentsService.findAll(req.user.gymId);
   }
 
   @Get('unpaid')
-  @Roles(UserRole.ADMIN, UserRole.COACH)
-  findUnpaid(@Request() req: any) {
+  @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  findUnpaid(@Request() req: any, @Query('gymId') gymId?: string) {
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      return this.paymentsService.findUnpaid(gymId);
+    }
     return this.paymentsService.findUnpaid(req.user.gymId);
+  }
+
+  @Get('me')
+  @Roles(UserRole.MEMBER)
+  findMyPayments(@Request() req: any) {
+    return this.paymentsService.findByMember(req.user.userId, req.user.gymId);
   }
 }

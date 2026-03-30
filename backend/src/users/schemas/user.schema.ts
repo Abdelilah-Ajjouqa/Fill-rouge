@@ -5,6 +5,7 @@ export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
   COACH = 'COACH',
+  MEMBER = 'MEMBER',
 }
 
 export type UserDocument = HydratedDocument<User>;

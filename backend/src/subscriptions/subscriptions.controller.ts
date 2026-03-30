@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
@@ -34,8 +35,11 @@ export class SubscriptionsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.COACH)
-  findAll(@Request() req: any) {
+  @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  findAll(@Request() req: any, @Query('gymId') gymId?: string) {
+    if (req.user.role === UserRole.SUPER_ADMIN) {
+      return this.subscriptionsService.findAll(gymId);
+    }
     return this.subscriptionsService.findAll(req.user.gymId);
   }
 
@@ -49,6 +53,15 @@ export class SubscriptionsController {
   @Roles(UserRole.ADMIN, UserRole.COACH)
   findByMember(@Request() req: any, @Param('memberId') memberId: string) {
     return this.subscriptionsService.findByMember(memberId, req.user.gymId);
+  }
+
+  @Get('me')
+  @Roles(UserRole.MEMBER)
+  findMySubscriptions(@Request() req: any) {
+    return this.subscriptionsService.findByMember(
+      req.user.userId,
+      req.user.gymId,
+    );
   }
 
   @Get(':id')

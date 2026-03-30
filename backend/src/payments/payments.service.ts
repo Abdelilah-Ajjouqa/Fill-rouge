@@ -81,9 +81,47 @@ export class PaymentsService {
     return payment.save();
   }
 
-  async findAll(gymId: string): Promise<Payment[]> {
+  async findByMember(memberId: string, gymId?: string): Promise<Payment[]> {
+    const subscriptionFilter: Record<string, any> = {
+      member: new Types.ObjectId(memberId),
+    };
+
+    if (gymId) {
+      subscriptionFilter.gymId = new Types.ObjectId(gymId);
+    }
+
+    const subscriptions = await this.subscriptionModel
+      .find(subscriptionFilter)
+      .select('_id')
+      .exec();
+
+    if (subscriptions.length === 0) {
+      return [];
+    }
+
+    const subscriptionIds = subscriptions.map((sub) => sub._id);
+
     return this.paymentModel
-      .find({ gymId: new Types.ObjectId(gymId) })
+      .find({ subscription: { $in: subscriptionIds } })
+      .populate({
+        path: 'subscription',
+        populate: [
+          { path: 'member', select: 'firstName lastName email' },
+          {
+            path: 'activity',
+            select: 'name monthlyPrice schedule coach',
+            populate: { path: 'coach', select: 'firstName lastName email' },
+          },
+        ],
+      })
+      .sort({ paidAt: -1 })
+      .exec();
+  }
+
+  async findAll(gymId?: string): Promise<Payment[]> {
+    const filter = gymId ? { gymId: new Types.ObjectId(gymId) } : {};
+    return this.paymentModel
+      .find(filter)
       .populate({
         path: 'subscription',
         populate: [
@@ -95,10 +133,14 @@ export class PaymentsService {
       .exec();
   }
 
-  async findUnpaid(gymId: string) {
+  async findUnpaid(gymId?: string) {
     // Find active subscriptions that have no payment record
+    const subscriptionFilter: Record<string, any> = { status: 'active' };
+    if (gymId) {
+      subscriptionFilter.gymId = new Types.ObjectId(gymId);
+    }
     const subscriptions = await this.subscriptionModel
-      .find({ gymId: new Types.ObjectId(gymId), status: 'active' })
+      .find(subscriptionFilter)
       .populate('member', 'firstName lastName email phone')
       .populate('activity', 'name monthlyPrice')
       .exec();

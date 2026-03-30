@@ -10,12 +10,14 @@ import {
   Activity,
   ActivitySchema,
 } from '../activities/schemas/activity.schema';
+import { Gym, GymSchema } from '../gyms/schemas/gym.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Subscription.name, schema: SubscriptionSchema },
       { name: Activity.name, schema: ActivitySchema },
+      { name: Gym.name, schema: GymSchema },
     ]),
   ],
   controllers: [SubscriptionsController],

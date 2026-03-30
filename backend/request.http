@@ -24,7 +24,11 @@ Content-Type: application/json
   "name": "FitClub Downtown",
   "address": "123 Main St, Casablanca",
   "phone": "0600000000",
-  "isActive": true
+  "isActive": true,
+  "halls": [
+    { "name": "A-1", "type": "Yoga", "capacity": 20 },
+    { "name": "B-2", "type": "Strength", "capacity": 25 }
+  ]
 }
 
 ### Create admin (Super Admin)
@@ -80,6 +84,7 @@ Content-Type: application/json
 
 {
   "name": "CrossFit Basics",
+  "hallId": "HALL_ID",
   "coach": "COACH_USER_ID",
   "monthlyPrice": 300,
   "maxCapacity": 60,
