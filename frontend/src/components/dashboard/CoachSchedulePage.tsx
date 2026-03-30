@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+import { useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, AlertTriangle } from 'lucide-react';
-import api from '../../api/axios';
-import type { RootState } from '../../store/store';
-import type { Activity, ScheduleSlot } from '../../types/models';
+import type { RootState, AppDispatch } from '../../store/store';
+import { fetchActivities } from '../../store/slices/activitiesSlice';
+import type { ScheduleSlot } from '../../types/models';
 import { StatCard } from './StatCard';
 
 type ScheduleEntry = {
@@ -101,50 +100,18 @@ const formatSessionDate = (date: Date) => {
 export const CoachSchedulePage = () => {
   const userRole = useSelector((state: RootState) => state.auth.user?.role);
   const isCoach = userRole === 'COACH';
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useDispatch<AppDispatch>();
+  const { activities, isLoading, error } = useSelector(
+    (state: RootState) => state.activities,
+  );
 
   useEffect(() => {
     if (!isCoach) {
       return;
     }
 
-    let isActive = true;
-
-    const fetchActivities = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await api.get<Activity[]>('/activities');
-        if (!isActive) {
-          return;
-        }
-        setActivities(response.data);
-      } catch (err) {
-        if (!isActive) {
-          return;
-        }
-
-        let message = 'Failed to load schedule.';
-        if (axios.isAxiosError(err)) {
-          message = err.response?.data?.message || message;
-        }
-        setError(message);
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchActivities();
-
-    return () => {
-      isActive = false;
-    };
-  }, [isCoach]);
+    dispatch(fetchActivities());
+  }, [dispatch, isCoach]);
 
   const sessions = useMemo(() => {
     const entries: ScheduleEntry[] = [];

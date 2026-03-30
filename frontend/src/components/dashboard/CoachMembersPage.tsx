@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+import { useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Users } from 'lucide-react';
-import api from '../../api/axios';
-import type { RootState } from '../../store/store';
-import type { Member } from '../../types/models';
+import type { RootState, AppDispatch } from '../../store/store';
+import { fetchMembers } from '../../store/slices/membersSlice';
 import { StatCard } from './StatCard';
 
 const formatDate = (value?: string) => {
@@ -21,50 +19,18 @@ const formatDate = (value?: string) => {
 export const CoachMembersPage = () => {
   const userRole = useSelector((state: RootState) => state.auth.user?.role);
   const isCoach = userRole === 'COACH';
-  const [members, setMembers] = useState<Member[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useDispatch<AppDispatch>();
+  const { members, isLoading, error } = useSelector(
+    (state: RootState) => state.members,
+  );
 
   useEffect(() => {
     if (!isCoach) {
       return;
     }
 
-    let isActive = true;
-
-    const fetchMembers = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await api.get<Member[]>('/members');
-        if (!isActive) {
-          return;
-        }
-        setMembers(response.data);
-      } catch (err) {
-        if (!isActive) {
-          return;
-        }
-
-        let message = 'Failed to load members.';
-        if (axios.isAxiosError(err)) {
-          message = err.response?.data?.message || message;
-        }
-        setError(message);
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchMembers();
-
-    return () => {
-      isActive = false;
-    };
-  }, [isCoach]);
+    dispatch(fetchMembers());
+  }, [dispatch, isCoach]);
 
   const totalMembers = members.length;
   const newMembersThisMonth = useMemo(() => {

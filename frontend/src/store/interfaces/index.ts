@@ -1,5 +1,5 @@
 import type { User } from "../../types/auth";
-import type { Gym, Member } from "../../types/models";
+import type { Activity, Gym, Member } from "../../types/models";
 
 // Auth Interfaces
 export interface AuthState {
@@ -31,6 +31,21 @@ export interface MemberInput {
 
 export interface MembersState {
     members: Member[];
+    isLoading: boolean;
+    error: string | null;
+}
+
+// Activities Interfaces
+export interface ActivityInput {
+    name: string;
+    coach: string;
+    hallId: string;
+    monthlyPrice: number;
+    maxCapacity: number;
+}
+
+export interface ActivitiesState {
+    activities: Activity[];
     isLoading: boolean;
     error: string | null;
 }

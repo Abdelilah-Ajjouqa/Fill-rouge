@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { Edit2, Plus, Users, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../api/axios';
-import type { RootState } from '../../store/store';
+import type { RootState, AppDispatch } from '../../store/store';
+import { createActivity, fetchActivities, updateActivity } from '../../store/slices/activitiesSlice';
 import type { Activity, Gym, Hall } from '../../types/models';
 import type { User } from '../../types/auth';
 import { CoachCreateModal } from './modals/CoachCreateModal';
@@ -33,6 +34,7 @@ const resolveCoachId = (activity: Activity | null) => {
 };
 
 const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: ActivityModalProps) => {
+    const dispatch = useDispatch<AppDispatch>();
     const [name, setName] = useState('');
     const [coachId, setCoachId] = useState('');
     const [hallId, setHallId] = useState('');
@@ -97,19 +99,24 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
 
         try {
             if (activity) {
-                await api.patch(`/activities/${activity._id}`, payload);
-                toast.success('Activity updated successfully.');
+                const result = await dispatch(updateActivity({ id: activity._id, data: payload }));
+                if (updateActivity.fulfilled.match(result)) {
+                    toast.success('Activity updated successfully.');
+                    onSaved();
+                } else {
+                    toast.error(typeof result.payload === 'string' ? result.payload : 'Failed to save activity.');
+                }
             } else {
-                await api.post('/activities', payload);
-                toast.success('Activity created successfully.');
+                const result = await dispatch(createActivity(payload));
+                if (createActivity.fulfilled.match(result)) {
+                    toast.success('Activity created successfully.');
+                    onSaved();
+                } else {
+                    toast.error(typeof result.payload === 'string' ? result.payload : 'Failed to save activity.');
+                }
             }
-            onSaved();
         } catch (error) {
-            let message = 'Failed to save activity.';
-            if (axios.isAxiosError(error)) {
-                message = error.response?.data?.message || message;
-            }
-            toast.error(message);
+            toast.error('Failed to save activity.');
         } finally {
             setIsSaving(false);
         }
@@ -269,12 +276,16 @@ export const ActivitiesPage = () => {
     const isAdmin = user?.role === 'ADMIN';
     const isCoach = user?.role === 'COACH';
 
-    const [activities, setActivities] = useState<Activity[]>([]);
+    const dispatch = useDispatch<AppDispatch>();
+    const { activities, isLoading: activitiesLoading, error: activitiesError } = useSelector(
+        (state: RootState) => state.activities,
+    );
+
     const [coaches, setCoaches] = useState<User[]>([]);
     const [halls, setHalls] = useState<Hall[]>([]);
     const [gymName, setGymName] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isAdminLoading, setIsAdminLoading] = useState(false);
+    const [pageError, setPageError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
     const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
@@ -331,7 +342,7 @@ export const ActivitiesPage = () => {
             });
             toast.success('Coach created successfully.');
             closeCoachModal();
-            loadActivities();
+            loadAdminResources();
         } catch (err) {
             let message = 'Failed to create coach.';
             if (axios.isAxiosError(err)) {
@@ -361,40 +372,63 @@ export const ActivitiesPage = () => {
         return map;
     }, [coaches]);
 
-    const loadActivities = async () => {
-        setIsLoading(true);
-        setError(null);
+    const gymId = user?.gymId;
+
+    const loadAdminResources = useCallback(async () => {
+        if (!isAdmin || !gymId) {
+            setGymName('');
+            setHalls([]);
+            setCoaches([]);
+            return;
+        }
+
+        setIsAdminLoading(true);
+        setPageError(null);
 
         try {
-            const activityResponse = await api.get<Activity[]>('/activities');
-            setActivities(activityResponse.data);
+            const [gymResponse, usersResponse] = await Promise.all([
+                api.get<Gym>(`/gyms/${gymId}`),
+                api.get<User[]>('/users'),
+            ]);
 
-            if (isAdmin && user?.gymId) {
-                const gymResponse = await api.get<Gym>(`/gyms/${user.gymId}`);
-                setGymName(gymResponse.data.name);
-                setHalls(gymResponse.data.halls ?? []);
+            setGymName(gymResponse.data.name);
+            setHalls(gymResponse.data.halls ?? []);
 
-                const usersResponse = await api.get<User[]>('/users');
-                const coachList = usersResponse.data.filter((entry) => entry.role === 'COACH');
-                setCoaches(coachList);
-            }
+            const coachList = usersResponse.data.filter((entry) => entry.role === 'COACH');
+            setCoaches(coachList);
         } catch (fetchError) {
             let message = 'Failed to load activities.';
             if (axios.isAxiosError(fetchError)) {
                 message = fetchError.response?.data?.message || message;
             }
-            setError(message);
+            setPageError(message);
         } finally {
-            setIsLoading(false);
+            setIsAdminLoading(false);
         }
-    };
+    }, [gymId, isAdmin]);
+
+    const refreshActivities = useCallback(() => {
+        dispatch(fetchActivities());
+    }, [dispatch]);
 
     useEffect(() => {
         if (!user || (!isAdmin && !isCoach)) {
             return;
         }
-        loadActivities();
-    }, [user, isAdmin, isCoach]);
+
+        refreshActivities();
+
+        if (isAdmin) {
+            loadAdminResources();
+        } else {
+            setGymName('');
+            setHalls([]);
+            setCoaches([]);
+        }
+    }, [user, isAdmin, isCoach, refreshActivities, loadAdminResources]);
+
+    const isLoading = activitiesLoading || isAdminLoading;
+    const errorMessage = pageError || activitiesError;
 
     if (!user) {
         return (
@@ -432,7 +466,6 @@ export const ActivitiesPage = () => {
 
     const handleSaved = () => {
         handleModalClose();
-        loadActivities();
     };
 
     return (
@@ -463,9 +496,9 @@ export const ActivitiesPage = () => {
                 )}
             </div>
 
-            {error && (
+            {errorMessage && (
                 <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-                    {error}
+                    {errorMessage}
                 </div>
             )}
 
