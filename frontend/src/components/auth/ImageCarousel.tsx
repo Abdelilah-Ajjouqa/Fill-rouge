@@ -49,7 +49,7 @@ export function ImageCarousel() {
             key={index}
             onClick={() => setCurrentIndex(index)}
             className={`h-1 transition-all duration-300 ${index === currentIndex
-                ? 'w-8 bg-[#DFFF00]'
+                ? 'w-8 bg-brand'
                 : 'w-4 bg-white/40 hover:bg-white/60'
               }`}
             aria-label={`Go to slide ${index + 1}`}

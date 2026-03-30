@@ -21,9 +21,9 @@ function App() {
         {/* public routes */}
         <Route path="/" element={<AuthPage />} />
 
-
         {/* protected routes */}
         <Route element={<ProtectedRoute />}>
+
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/gyms/:gymId/admins" element={<GymAdminsPage />} />
@@ -35,9 +35,12 @@ function App() {
             <Route path="/dashboard/analytics" element={<SuperAdminAnalyticsPage />} />
             <Route path="/dashboard/settings" element={<SuperAdminSettingsPage />} />
           </Route>
+
         </Route>
+
       </Routes>
 
+      {/* Toaster for notifications */}
       <Toaster
         richColors
         position="top-right"

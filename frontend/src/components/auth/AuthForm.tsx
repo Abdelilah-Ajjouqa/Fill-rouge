@@ -60,7 +60,7 @@ export function AuthForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
-            className="w-full border border-neutral-700 bg-transparent px-4 py-3.5 text-white placeholder-neutral-600 transition-colors focus:border-[#DFFF00] focus:outline-none"
+            className="w-full border border-neutral-700 bg-transparent px-4 py-3.5 text-white placeholder-neutral-600 transition-colors focus:border-brand focus:outline-none"
             required
           />
         </div>
@@ -77,7 +77,7 @@ export function AuthForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
-              className="w-full border border-neutral-700 bg-transparent px-4 py-3.5 pr-12 text-white placeholder-neutral-600 transition-colors focus:border-[#DFFF00] focus:outline-none"
+              className="w-full border border-neutral-700 bg-transparent px-4 py-3.5 pr-12 text-white placeholder-neutral-600 transition-colors focus:border-brand focus:outline-none"
               required
             />
             <button
@@ -99,7 +99,7 @@ export function AuthForm() {
             </button>
           </div>
           <div className="mt-2 flex justify-end">
-            <a href="#" className="text-xs text-neutral-400 hover:text-[#DFFF00]">Forgot password?</a>
+            <a href="#" className="text-xs text-neutral-400 hover:text-brand">Forgot password?</a>
           </div>
         </div>
 
@@ -114,7 +114,7 @@ export function AuthForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="relative mt-8 w-full bg-[#DFFF00] py-4 text-sm font-bold uppercase tracking-widest text-[#050505] transition-all duration-300 hover:bg-[#DFFF00]/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="relative mt-8 w-full bg-brand py-4 text-sm font-bold uppercase tracking-widest text-slate-950 transition-all duration-300 hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
             boxShadow: '0 0 20px rgba(223, 255, 0, 0.3), 0 0 40px rgba(223, 255, 0, 0.1)',
           }}
