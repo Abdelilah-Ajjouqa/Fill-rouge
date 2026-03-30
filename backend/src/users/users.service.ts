@@ -47,7 +47,7 @@ export class UsersService {
       gymId,
       passwordHash,
     });
-    
+
     return createdUser.save();
   }
 
@@ -56,7 +56,10 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User | null> {
-    const user = await this.userModel.findById(id).select('-passwordHash').exec();
+    const user = await this.userModel
+      .findById(id)
+      .select('-passwordHash')
+      .exec();
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
     }
@@ -84,7 +87,7 @@ export class UsersService {
     }
 
     const updateData: any = { ...rest };
-    
+
     if (role !== undefined) updateData.role = role;
     if (gymId !== undefined) updateData.gymId = gymId;
     if (password) updateData.passwordHash = await bcrypt.hash(password, 10);

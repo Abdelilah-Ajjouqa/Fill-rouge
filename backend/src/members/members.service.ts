@@ -5,14 +5,21 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Member, MemberDocument } from './schema/member.schema';
 import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { Activity, ActivityDocument } from '../activities/schemas/activity.schema';
-import { Subscription, SubscriptionDocument } from '../subscriptions/schemas/subscription.schema';
+import {
+  Activity,
+  ActivityDocument,
+} from '../activities/schemas/activity.schema';
+import {
+  Subscription,
+  SubscriptionDocument,
+} from '../subscriptions/schemas/subscription.schema';
 
 @Injectable()
 export class MembersService {
   constructor(
     @InjectModel(Member.name) private memberModel: Model<MemberDocument>,
-    @InjectModel(Subscription.name) private subscriptionModel: Model<SubscriptionDocument>,
+    @InjectModel(Subscription.name)
+    private subscriptionModel: Model<SubscriptionDocument>,
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
   ) {}
 
@@ -20,7 +27,11 @@ export class MembersService {
     const { password, ...rest } = createMemberDto;
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const createdMember = new this.memberModel({ ...rest, passwordHash, gymId });
+    const createdMember = new this.memberModel({
+      ...rest,
+      passwordHash,
+      gymId,
+    });
     return createdMember.save();
   }
 
@@ -70,20 +81,25 @@ export class MembersService {
       .findOne({ _id: id, gymId })
       .select('-passwordHash')
       .exec();
-      
+
     if (!member) {
-      throw new NotFoundException(`Member with ID "${id}" not found in your gym`);
+      throw new NotFoundException(
+        `Member with ID "${id}" not found in your gym`,
+      );
     }
-    
+
     return member;
   }
 
   async findById(id: string) {
-    const member = await this.memberModel.findById(id).select('-passwordHash').exec();
+    const member = await this.memberModel
+      .findById(id)
+      .select('-passwordHash')
+      .exec();
     if (!member) {
       throw new NotFoundException(`Member not found`);
     }
-    
+
     return member;
   }
 
@@ -101,19 +117,25 @@ export class MembersService {
       .exec();
 
     if (!updatedMember) {
-      throw new NotFoundException(`Member with ID "${id}" not found in your gym`);
+      throw new NotFoundException(
+        `Member with ID "${id}" not found in your gym`,
+      );
     }
 
     return updatedMember;
   }
 
   async remove(id: string, gymId: string) {
-    const deletedMember = await this.memberModel.findOneAndDelete({ _id: id, gymId }).exec();
-    
+    const deletedMember = await this.memberModel
+      .findOneAndDelete({ _id: id, gymId })
+      .exec();
+
     if (!deletedMember) {
-      throw new NotFoundException(`Member with ID "${id}" not found in your gym`);
+      throw new NotFoundException(
+        `Member with ID "${id}" not found in your gym`,
+      );
     }
-    
+
     return deletedMember;
   }
 }

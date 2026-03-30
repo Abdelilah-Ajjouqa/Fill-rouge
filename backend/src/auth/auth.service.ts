@@ -18,14 +18,14 @@ export class AuthService {
   async validateUser(email: string, pass: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
 
-    if (user && await bcrypt.compare(pass, user.passwordHash)) {
+    if (user && (await bcrypt.compare(pass, user.passwordHash))) {
       const { passwordHash: _ph, ...result } = user.toObject();
       return { ...result, isMember: false };
     }
 
     const member = await this.membersService.findByEmail(email);
 
-    if (member && await bcrypt.compare(pass, member.passwordHash)) {
+    if (member && (await bcrypt.compare(pass, member.passwordHash))) {
       const { passwordHash: _ph, ...result } = member.toObject();
       return { ...result, isMember: true };
     }
@@ -35,11 +35,11 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.validateUser(loginDto.email, loginDto.password);
-    
+
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
     const role = user.isMember ? UserRole.MEMBER : user.role;
-    
+
     const payload = {
       email: user.email,
       sub: user._id,
@@ -60,11 +60,11 @@ export class AuthService {
   }
 
   async getProfile(userId: string, role: string) {
-    if (role === UserRole.MEMBER as string) {
+    if (role === (UserRole.MEMBER as string)) {
       const member = await this.membersService.findById(userId);
       return { ...member.toObject(), role: UserRole.MEMBER };
     }
-    
+
     return this.usersService.findOne(userId);
   }
 }

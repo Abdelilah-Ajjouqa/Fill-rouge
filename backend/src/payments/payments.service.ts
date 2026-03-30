@@ -25,19 +25,24 @@ export class PaymentsService {
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
   ) {}
 
-  async create(createPaymentDto: CreatePaymentDto, gymId: string): Promise<Payment> {
+  async create(
+    createPaymentDto: CreatePaymentDto,
+    gymId: string,
+  ): Promise<Payment> {
     const subscriptionId = new Types.ObjectId(createPaymentDto.subscription);
     const gymObjectId = new Types.ObjectId(gymId);
 
     const subscription = await this.subscriptionModel
       .findOne({ _id: subscriptionId, gymId: gymObjectId })
       .exec();
-    
+
     if (!subscription) {
       throw new NotFoundException('Subscription not found in this gym');
     }
 
-    const activity = await this.activityModel.findById(subscription.activity).exec();
+    const activity = await this.activityModel
+      .findById(subscription.activity)
+      .exec();
     if (!activity) {
       throw new NotFoundException('Activity not found');
     }
@@ -62,7 +67,9 @@ export class PaymentsService {
       subscription: subscriptionId,
       amount: amountDue,
       amountDue,
-      paidAt: createPaymentDto.paidAt ? new Date(createPaymentDto.paidAt) : new Date(),
+      paidAt: createPaymentDto.paidAt
+        ? new Date(createPaymentDto.paidAt)
+        : new Date(),
     });
 
     return payment.save();
@@ -72,7 +79,10 @@ export class PaymentsService {
     const filter: any = { member: new Types.ObjectId(memberId) };
     if (gymId) filter.gymId = new Types.ObjectId(gymId);
 
-    const subscriptions = await this.subscriptionModel.find(filter).select('_id').exec();
+    const subscriptions = await this.subscriptionModel
+      .find(filter)
+      .select('_id')
+      .exec();
     if (!subscriptions.length) return [];
 
     const subscriptionIds = subscriptions.map((sub) => sub._id);
@@ -129,7 +139,9 @@ export class PaymentsService {
       .select('subscription')
       .exec();
 
-    const paidSubIds = new Set(existingPayments.map((p) => String(p.subscription)));
+    const paidSubIds = new Set(
+      existingPayments.map((p) => String(p.subscription)),
+    );
 
     // 3. Filter natively in memory (Eliminates the N+1 database queries)
     return subscriptions
