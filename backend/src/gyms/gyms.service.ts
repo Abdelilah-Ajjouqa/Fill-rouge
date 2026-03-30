@@ -4,10 +4,14 @@ import { Model } from 'mongoose';
 import { Gym, GymDocument } from './schemas/gym.schema';
 import { CreateGymDto } from './dto/create-gym.dto';
 import { UpdateGymDto } from './dto/update-gym.dto';
+import { User, UserDocument } from '../users/schemas/user.schema';
 
 @Injectable()
 export class GymsService {
-  constructor(@InjectModel(Gym.name) private gymModel: Model<GymDocument>) {}
+  constructor(
+    @InjectModel(Gym.name) private gymModel: Model<GymDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+  ) {}
 
     async create(createGymDto: CreateGymDto): Promise<Gym> {
         const existing = await this.gymModel.findOne({ name: createGymDto.name }).exec();
@@ -41,10 +45,15 @@ export class GymsService {
   }
 
   async remove(id: string): Promise<Gym> {
-    const deletedGym = await this.gymModel.findByIdAndDelete(id).exec();
-    if (!deletedGym) {
+    const gym = await this.gymModel.findById(id).exec();
+    if (!gym) {
       throw new NotFoundException(`Gym with ID "${id}" not found`);
     }
-    return deletedGym;
+
+    // Keep user accounts but detach them from the deleted gym.
+    await this.userModel.updateMany({ gymId: gym._id }, { $set: { gymId: null } }).exec();
+
+    await this.gymModel.findByIdAndDelete(id).exec();
+    return gym;
   }
 }

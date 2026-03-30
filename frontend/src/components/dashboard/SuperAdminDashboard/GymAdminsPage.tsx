@@ -19,6 +19,8 @@ export const GymAdminsPage = () => {
         isDeleting,
         formError,
         editError,
+        availableAdmins,
+        selectedExistingAdminId,
         formValues,
         editValues,
         editingAdmin,
@@ -26,6 +28,7 @@ export const GymAdminsPage = () => {
         closeCreateModal,
         openEditModal,
         closeEditModal,
+        handleExistingAdminSelect,
         handleInputChange,
         handleEditChange,
         handleCreateAdmin,
@@ -85,6 +88,9 @@ export const GymAdminsPage = () => {
                 values={formValues}
                 error={formError}
                 isSubmitting={isSubmitting}
+                availableAdmins={availableAdmins}
+                selectedExistingAdminId={selectedExistingAdminId}
+                onSelectExistingAdmin={handleExistingAdminSelect}
                 onChange={handleInputChange}
                 onClose={closeCreateModal}
                 onSubmit={handleCreateAdmin}

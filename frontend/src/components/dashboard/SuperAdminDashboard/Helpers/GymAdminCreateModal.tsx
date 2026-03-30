@@ -1,4 +1,5 @@
 import type { ChangeEvent, FormEvent } from 'react';
+import type { User } from '../../../../types/auth';
 
 type FormState = {
     firstName: string;
@@ -12,6 +13,9 @@ type GymAdminCreateModalProps = {
     values: FormState;
     error: string | null;
     isSubmitting: boolean;
+    availableAdmins: User[];
+    selectedExistingAdminId: string;
+    onSelectExistingAdmin: (value: string) => void;
     onChange: (field: keyof FormState) => (event: ChangeEvent<HTMLInputElement>) => void;
     onClose: () => void;
     onSubmit: (event: FormEvent) => void;
@@ -22,6 +26,9 @@ export const GymAdminCreateModal = ({
     values,
     error,
     isSubmitting,
+    availableAdmins,
+    selectedExistingAdminId,
+    onSelectExistingAdmin,
     onChange,
     onClose,
     onSubmit,
@@ -34,7 +41,7 @@ export const GymAdminCreateModal = ({
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-md w-full relative animate-fade-in">
                 <h3 className="text-xl font-bold mb-4">Add Gym Admin</h3>
-                <p className="text-white/60 text-sm mb-6">Create a new admin for this gym.</p>
+                <p className="text-white/60 text-sm mb-6">Assign an existing admin or create a new one for this gym.</p>
 
                 <form onSubmit={onSubmit} className="space-y-5">
                     {error && (
@@ -42,6 +49,25 @@ export const GymAdminCreateModal = ({
                             {error}
                         </div>
                     )}
+
+                    <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                            Existing Unassigned Admin
+                        </label>
+                        <select
+                            value={selectedExistingAdminId}
+                            onChange={(event) => onSelectExistingAdmin(event.target.value)}
+                            className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                        >
+                            <option value="">Create new admin instead</option>
+                            {availableAdmins.map((admin) => (
+                                <option key={admin._id} value={admin._id}>
+                                    {admin.firstName} {admin.lastName} · {admin.email}
+                                </option>
+                            ))}
+                        </select>
+                        <p className="text-[10px] text-white/30 mt-1">Choose one to attach it to this gym.</p>
+                    </div>
 
                     <div className="space-y-4">
                         <div>
@@ -52,7 +78,8 @@ export const GymAdminCreateModal = ({
                                 type="text"
                                 value={values.firstName}
                                 onChange={onChange('firstName')}
-                                required
+                                required={!selectedExistingAdminId}
+                                disabled={Boolean(selectedExistingAdminId)}
                                 placeholder="e.g. Sarah"
                                 className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
                             />
@@ -66,7 +93,8 @@ export const GymAdminCreateModal = ({
                                 type="text"
                                 value={values.lastName}
                                 onChange={onChange('lastName')}
-                                required
+                                required={!selectedExistingAdminId}
+                                disabled={Boolean(selectedExistingAdminId)}
                                 placeholder="e.g. Bennani"
                                 className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
                             />
@@ -80,7 +108,8 @@ export const GymAdminCreateModal = ({
                                 type="email"
                                 value={values.email}
                                 onChange={onChange('email')}
-                                required
+                                required={!selectedExistingAdminId}
+                                disabled={Boolean(selectedExistingAdminId)}
                                 placeholder="e.g. admin@gym.com"
                                 className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
                             />
@@ -95,7 +124,8 @@ export const GymAdminCreateModal = ({
                                 value={values.password}
                                 onChange={onChange('password')}
                                 minLength={6}
-                                required
+                                required={!selectedExistingAdminId}
+                                disabled={Boolean(selectedExistingAdminId)}
                                 placeholder="Minimum 6 characters"
                                 className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
                             />
@@ -116,7 +146,7 @@ export const GymAdminCreateModal = ({
                             disabled={isSubmitting}
                             className="flex-1 bg-brand text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50"
                         >
-                            {isSubmitting ? 'Saving...' : 'Add Admin'}
+                            {isSubmitting ? 'Saving...' : selectedExistingAdminId ? 'Assign Admin' : 'Add Admin'}
                         </button>
                     </div>
                 </form>

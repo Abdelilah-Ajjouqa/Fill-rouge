@@ -144,9 +144,6 @@ export const SuperAdminAnalyticsPage = () => {
                     <h2 className="text-2xl font-bold tracking-tight">Platform Analytics</h2>
                     <p className="text-white/40 text-sm mt-1">High level metrics across the network.</p>
                 </div>
-                <button className="bg-brand text-black text-[10px] font-bold uppercase tracking-widest px-4 py-2 hover:bg-white transition-colors border border-brand">
-                    Export Report
-                </button>
             </div>
 
             {error && (

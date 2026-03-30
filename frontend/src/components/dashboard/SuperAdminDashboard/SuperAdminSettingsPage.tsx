@@ -179,6 +179,7 @@ export const SuperAdminSettingsPage = () => {
                     logoUrl: brandingForm.logoUrl.trim(),
                     tagline: brandingForm.tagline.trim(),
                 }));
+                window.dispatchEvent(new Event('branding-updated'));
             }
             toast.success('Branding saved locally.');
         } finally {
@@ -189,6 +190,7 @@ export const SuperAdminSettingsPage = () => {
     const handleBrandingReset = () => {
         if (typeof window !== 'undefined') {
             window.localStorage.removeItem(BRANDING_STORAGE_KEY);
+            window.dispatchEvent(new Event('branding-updated'));
         }
         setBrandingForm(defaultBranding);
         setBrandingError(null);

@@ -4,9 +4,9 @@ import {
     type ChangeEvent,
     type FormEvent,
 } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
-import type { AppDispatch } from '../../../../store/store';
+import type { RootState, AppDispatch } from '../../../../store/store';
 import { createUser, deleteUser, updateUser } from '../../../../store/slices/usersSlice';
 import type { User } from '../../../../types/auth';
 
@@ -32,6 +32,8 @@ type UseGymAdminActionsResult = {
     isDeleting: boolean;
     formError: string | null;
     editError: string | null;
+    availableAdmins: User[];
+    selectedExistingAdminId: string;
     formValues: FormState;
     editValues: FormState;
     editingAdmin: User | null;
@@ -39,6 +41,7 @@ type UseGymAdminActionsResult = {
     closeCreateModal: () => void;
     openEditModal: (admin: User) => void;
     closeEditModal: () => void;
+    handleExistingAdminSelect: (value: string) => void;
     handleInputChange: (field: keyof FormState) => (event: ChangeEvent<HTMLInputElement>) => void;
     handleEditChange: (field: keyof FormState) => (event: ChangeEvent<HTMLInputElement>) => void;
     handleCreateAdmin: (event: FormEvent) => Promise<void>;
@@ -52,6 +55,7 @@ export const useGymAdminActions = ({
     admins,
 }: UseGymAdminActionsArgs): UseGymAdminActionsResult => {
     const dispatch = useDispatch<AppDispatch>();
+    const { users } = useSelector((state: RootState) => state.users);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +64,7 @@ export const useGymAdminActions = ({
     const [isDeleting, setIsDeleting] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
     const [editError, setEditError] = useState<string | null>(null);
+    const [selectedExistingAdminId, setSelectedExistingAdminId] = useState('');
     const [formValues, setFormValues] = useState<FormState>({
         firstName: '',
         lastName: '',
@@ -75,9 +80,14 @@ export const useGymAdminActions = ({
     const [editingAdmin, setEditingAdmin] = useState<User | null>(null);
 
     const hasAdmin = useMemo(() => admins.length > 0, [admins.length]);
+    const availableAdmins = useMemo(
+        () => users.filter((user) => user.role === 'ADMIN' && !user.gymId),
+        [users],
+    );
 
     const resetForm = () => {
         setFormValues({ firstName: '', lastName: '', email: '', password: '' });
+        setSelectedExistingAdminId('');
         setFormError(null);
     };
 
@@ -118,6 +128,11 @@ export const useGymAdminActions = ({
         resetEditForm();
     };
 
+    const handleExistingAdminSelect = (value: string) => {
+        setSelectedExistingAdminId(value);
+        setFormError(null);
+    };
+
     const handleInputChange = (field: keyof FormState) =>
         (event: ChangeEvent<HTMLInputElement>) => {
             setFormValues((prev) => ({ ...prev, [field]: event.target.value }));
@@ -145,6 +160,13 @@ export const useGymAdminActions = ({
         setFormError(null);
 
         try {
+            if (selectedExistingAdminId) {
+                await dispatch(updateUser({ id: selectedExistingAdminId, data: { gymId } })).unwrap();
+                toast.success('Existing admin assigned successfully.');
+                closeCreateModal();
+                return;
+            }
+
             const payload = {
                 ...formValues,
                 role: 'ADMIN',
@@ -254,6 +276,8 @@ export const useGymAdminActions = ({
         isDeleting,
         formError,
         editError,
+        availableAdmins,
+        selectedExistingAdminId,
         formValues,
         editValues,
         editingAdmin,
@@ -261,6 +285,7 @@ export const useGymAdminActions = ({
         closeCreateModal,
         openEditModal,
         closeEditModal,
+        handleExistingAdminSelect,
         handleInputChange,
         handleEditChange,
         handleCreateAdmin,

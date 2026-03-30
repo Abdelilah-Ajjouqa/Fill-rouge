@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, AlertTriangle, MapPin } from 'lucide-react';
 import type { RootState, AppDispatch } from '../../../store/store';
-import { fetchActivities, fetchActivitiesByGym } from '../../../store/slices/activitiesSlice';
+import { fetchActivities } from '../../../store/slices/activitiesSlice';
 import { fetchGyms } from '../../../store/slices/gymsSlice';
 import type { Activity, Gym, Hall, GymRef } from '../../../types/models';
 import { StatCard } from '../StatCard';
@@ -78,12 +78,16 @@ export const SuperAdminSchedulePage = () => {
             return;
         }
 
-        if (selectedGymId) {
-            dispatch(fetchActivitiesByGym(selectedGymId));
-        } else {
-            dispatch(fetchActivities());
+        dispatch(fetchActivities());
+    }, [dispatch, isSuperAdmin]);
+
+    const visibleActivities = useMemo(() => {
+        if (!selectedGymId) {
+            return activities;
         }
-    }, [dispatch, isSuperAdmin, selectedGymId]);
+
+        return activities.filter((activity) => getGymId(activity.gymId) === selectedGymId);
+    }, [activities, selectedGymId]);
 
     const gymsMap = useMemo(() => {
         const map = new Map<string, Gym>();
@@ -112,7 +116,7 @@ export const SuperAdminSchedulePage = () => {
     const sessions = useMemo(() => {
         const entries: ScheduleEntry[] = [];
 
-        activities.forEach((activity) => {
+        visibleActivities.forEach((activity) => {
             const schedule = activity.schedule ?? [];
             if (schedule.length === 0) {
                 return;
@@ -148,9 +152,9 @@ export const SuperAdminSchedulePage = () => {
 
             return a.startTime.localeCompare(b.startTime);
         });
-    }, [activities, gymsMap, hallMap]);
+    }, [visibleActivities, gymsMap, hallMap]);
 
-    const unscheduledActivities = activities.filter(
+    const unscheduledActivities = visibleActivities.filter(
         (activity) => !activity.schedule || activity.schedule.length === 0,
     );
 
@@ -207,7 +211,7 @@ export const SuperAdminSchedulePage = () => {
                 />
                 <StatCard
                     title="Activities"
-                    value={isLoading ? '...' : activities.length}
+                    value={isLoading ? '...' : visibleActivities.length}
                     icon={<Clock className="h-5 w-5" />}
                     subtitle="Active classes"
                     delay={200}

@@ -1,14 +1,75 @@
+import { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Activity, LayoutGrid, Calendar, BarChart3, Settings, ChevronDown, User, Users, LogOut } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
 
+const BRANDING_STORAGE_KEY = 'superadmin_branding';
+
+type BrandingState = {
+    platformName: string;
+    logoUrl: string;
+    tagline: string;
+};
+
+const defaultBranding: BrandingState = {
+    platformName: 'FitManager',
+    logoUrl: '',
+    tagline: 'Global fitness operations',
+};
+
+const formatRoleLabel = (role: string) => role
+    .split('_')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
+
 export const DashboardLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const userRole = useSelector((state: RootState) => state.auth.user?.role) || 'MEMBER';
+    const user = useSelector((state: RootState) => state.auth.user);
+    const userRole = user?.role || 'MEMBER';
+    const [branding, setBranding] = useState<BrandingState>(defaultBranding);
+
+    const profileName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User';
+    const profileRole = formatRoleLabel(userRole);
+
+    useEffect(() => {
+        const loadBranding = () => {
+            if (typeof window === 'undefined') {
+                setBranding(defaultBranding);
+                return;
+            }
+
+            const stored = window.localStorage.getItem(BRANDING_STORAGE_KEY);
+            if (!stored) {
+                setBranding(defaultBranding);
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(stored) as Partial<BrandingState>;
+                setBranding({
+                    platformName: parsed.platformName || defaultBranding.platformName,
+                    logoUrl: parsed.logoUrl || defaultBranding.logoUrl,
+                    tagline: parsed.tagline || defaultBranding.tagline,
+                });
+            } catch {
+                setBranding(defaultBranding);
+            }
+        };
+
+        loadBranding();
+
+        window.addEventListener('storage', loadBranding);
+        window.addEventListener('branding-updated', loadBranding);
+
+        return () => {
+            window.removeEventListener('storage', loadBranding);
+            window.removeEventListener('branding-updated', loadBranding);
+        };
+    }, []);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -46,15 +107,6 @@ export const DashboardLayout = () => {
         ]
     }
 
-    const getRoleName = (role: string) => {
-        switch (role) {
-            case 'SUPER_ADMIN': return 'System Admin';
-            case 'ADMIN': return 'Gym Admin';
-            case 'COACH': return 'Head Coach';
-            default: return 'Gym Member';
-        }
-    }
-
     return (
         <div className="flex h-screen w-full overflow-hidden bg-slate-950 text-white font-sans antialiased">
             {/* Sidebar Navigation */}
@@ -62,9 +114,20 @@ export const DashboardLayout = () => {
                 <div className="p-6 border-b border-white/10">
                     <div className="flex items-center gap-3">
                         <div className="h-8 w-8 bg-brand flex items-center justify-center">
-                            <Activity className="text-black h-5 w-5" />
+                            {branding.logoUrl ? (
+                                <img
+                                    src={branding.logoUrl}
+                                    alt={`${branding.platformName} logo`}
+                                    className="h-5 w-5 object-cover"
+                                />
+                            ) : (
+                                <Activity className="text-black h-5 w-5" />
+                            )}
                         </div>
-                        <span className="text-xl font-bold tracking-tighter hidden lg:block">FITMANAGER</span>
+                        <div className="hidden lg:block overflow-hidden">
+                            <p className="text-xl font-bold tracking-tighter truncate">{branding.platformName}</p>
+                            <p className="text-[10px] text-white/40 truncate">{branding.tagline}</p>
+                        </div>
                     </div>
                 </div>
 
@@ -90,8 +153,8 @@ export const DashboardLayout = () => {
                             <User className="h-4 w-4 text-white/60" />
                         </div>
                         <div className="hidden lg:block overflow-hidden">
-                            <p className="text-xs font-bold truncate">{getRoleName(userRole)}</p>
-                            <p className="text-[10px] text-white/40 uppercase truncate">{userRole === 'SUPER_ADMIN' ? 'Root Access' : 'Active Account'}</p>
+                            <p className="text-xs font-bold truncate">{profileName}</p>
+                            <p className="text-[10px] text-white/40 uppercase truncate">{profileRole}</p>
                         </div>
                     </div>
                     
@@ -114,7 +177,7 @@ export const DashboardLayout = () => {
                             {navItems.find(i => i.path === location.pathname)?.name || 'Dashboard'}
                         </h1>
                         
-                        {(userRole === 'SUPER_ADMIN' || userRole === 'ADMIN') && (
+                        {userRole === 'ADMIN' && (
                             <>
                                 <div className="h-4 w-px bg-white/10"></div>
                                 <div className="relative group">

@@ -12,6 +12,23 @@ interface GymFormProps {
     onCancel: () => void;
 }
 
+const resolveGymLogoUrl = (logo?: string | null) => {
+    if (!logo) {
+        return null;
+    }
+
+    if (logo.startsWith('http://') || logo.startsWith('https://') || logo.startsWith('data:')) {
+        return logo;
+    }
+
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    if (logo.startsWith('/')) {
+        return `${baseUrl}${logo}`;
+    }
+
+    return `${baseUrl}/uploads/${logo}`;
+};
+
 export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
     const dispatch = useDispatch<AppDispatch>();
     const { isLoading, error } = useSelector((state: RootState) => state.gyms);
@@ -34,7 +51,7 @@ export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
 
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(
-        gym?.logo ? `${import.meta.env.VITE_API_BASE_URL}/uploads/${gym.logo}` : null
+        resolveGymLogoUrl(gym?.logo)
     );
 
     const handleSubmit = async (e: React.FormEvent) => {

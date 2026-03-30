@@ -11,6 +11,23 @@ type GymCardProps = {
     onViewDetails: (gym: Gym) => void;
 };
 
+const resolveGymLogoUrl = (logo?: string | null) => {
+    if (!logo) {
+        return null;
+    }
+
+    if (logo.startsWith('http://') || logo.startsWith('https://') || logo.startsWith('data:')) {
+        return logo;
+    }
+
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    if (logo.startsWith('/')) {
+        return `${baseUrl}${logo}`;
+    }
+
+    return `${baseUrl}/uploads/${logo}`;
+};
+
 export const GymCard = ({
     gym,
     animationDelayMs,
@@ -41,9 +58,9 @@ export const GymCard = ({
                 <div className="flex justify-between items-start mb-4">
                     <h3 className="text-xl font-bold tracking-tight truncate pr-4" title={gym.name}>{gym.name}</h3>
                     <span className="bg-white/5 p-2 border border-white/10 text-brand shrink-0">
-                        {gym.logo ? (
+                        {resolveGymLogoUrl(gym.logo) ? (
                             <img
-                                src={`${import.meta.env.VITE_API_BASE_URL}/uploads/${gym.logo}`}
+                                src={resolveGymLogoUrl(gym.logo) || undefined}
                                 alt="Logo"
                                 className="h-5 w-5 object-cover"
                             />
