@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
 import type { RootState, AppDispatch } from '../../../../store/store';
+import type { MemberInput } from '../../../../store/interfaces';
 import { createMember, fetchMembersByGym } from '../../../../store/slices/membersSlice';
 import { createUser, fetchUsers } from '../../../../store/slices/usersSlice';
 import type { Gym } from '../../../../types/models';
@@ -189,7 +190,7 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
             return;
         }
 
-        const payload = {
+        const payload: MemberInput = {
             firstName: memberForm.firstName.trim(),
             lastName: memberForm.lastName.trim(),
             email: memberForm.email.trim(),

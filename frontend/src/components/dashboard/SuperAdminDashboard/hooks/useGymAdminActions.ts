@@ -7,6 +7,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import type { RootState, AppDispatch } from '../../../../store/store';
+import type { UserInput } from '../../../../store/interfaces';
 import { createUser, deleteUser, updateUser } from '../../../../store/slices/usersSlice';
 import type { User } from '../../../../types/auth';
 
@@ -167,7 +168,7 @@ export const useGymAdminActions = ({
                 return;
             }
 
-            const payload = {
+            const payload: UserInput = {
                 ...formValues,
                 role: 'ADMIN',
                 gymId,
