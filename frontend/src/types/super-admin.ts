@@ -46,3 +46,16 @@ export type GymAdminEditModalProps = {
     onClose: () => void;
     onSubmit: (event: FormEvent) => void;
 };
+
+export type GymAdminCreateModalProps = {
+    isOpen: boolean;
+    values: GymAdminEditFormState;
+    error: string | null;
+    isSubmitting: boolean;
+    availableAdmins: User[];
+    selectedExistingAdminId: string;
+    onSelectExistingAdmin: (value: string) => void;
+    onChange: (field: keyof GymAdminEditFormState) => (event: ChangeEvent<HTMLInputElement>) => void;
+    onClose: () => void;
+    onSubmit: (event: FormEvent) => void;
+};
