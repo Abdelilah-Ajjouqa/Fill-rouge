@@ -59,7 +59,7 @@ export const ActivitiesPage = () => {
         <div className="p-8 space-y-8 animate-fade-in">
             <div className="flex justify-between gap-4">
                 <div><h2 className="text-2xl font-bold">Activities</h2><p className="text-white/40 text-sm mt-1">{isAdmin ? `Manage ${gymName}` : 'Your classes'}</p></div>
-                {isAdmin && <div className="flex gap-3"><button onClick={() => setCoachModal(state => ({...state, open: true}))} className="border border-white/10 text-xs font-bold uppercase px-4 py-3 hover:border-brand/40 text-white/70 hover:text-white">Add Coach</button><button onClick={() => setModal({ open: true, item: null })} className="bg-brand text-black text-xs font-bold uppercase px-4 py-3 hover:bg-white flex items-center gap-2"><Plus className="h-4 w-4" /> Add Activity</button></div>}
+                {isAdmin && <div className="flex gap-3"><button onClick={() => setCoachModal(state => ({ ...state, open: true }))} className="border border-white/10 text-xs font-bold uppercase px-4 py-3 hover:border-brand/40 text-white/70 hover:text-white">Add Coach</button><button onClick={() => setModal({ open: true, item: null })} className="bg-brand text-black text-xs font-bold uppercase px-4 py-3 hover:bg-white flex items-center gap-2"><Plus className="h-4 w-4" /> Add Activity</button></div>}
             </div>
             {pageError && <div className="p-4 bg-red-500/10 text-red-500 text-sm">{pageError}</div>}
             {isAdmin && (
@@ -74,7 +74,7 @@ export const ActivitiesPage = () => {
                         return (
                             <div key={activity._id} className="bg-slate-900 border border-white/10 p-6 flex flex-col gap-4">
                                 <div className="flex justify-between"><div><h3 className="text-lg font-bold">{activity.name}</h3><p className="text-xs text-white/50">Hall: {assignedHall?.name || 'Unassigned'}</p></div>{isAdmin && <button onClick={() => setModal({ open: true, item: activity })} className="text-white/40 hover:text-brand"><Edit2 className="h-4 w-4" /></button>}</div>
-                                <div className="grid grid-cols-2 gap-4 text-xs text-white/50"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Coach: {assignedCoach ? `${assignedCoach.firstName} ${assignedCoach.lastName}` : 'Unassigned'}</div><div className="flex items-center gap-2"><MapPin className="h-4 w-4"/> Cap: {assignedHall?.capacity ?? 'N/A'}</div></div>
+                                <div className="grid grid-cols-2 gap-4 text-xs text-white/50"><div className="flex items-center gap-2"><Users className="h-4 w-4" /> Coach: {assignedCoach ? `${assignedCoach.firstName} ${assignedCoach.lastName}` : 'Unassigned'}</div><div className="flex items-center gap-2"><MapPin className="h-4 w-4" /> Cap: {assignedHall?.capacity ?? 'N/A'}</div></div>
                                 <div className="flex justify-between text-xs text-white/60"><span>{activity.monthlyPrice} DH</span><span>Max: {activity.maxCapacity}</span></div>
                             </div>
                         );
