@@ -21,14 +21,14 @@ export const HallSchema = SchemaFactory.createForClass(Hall);
 
 @Schema({ timestamps: true })
 export class Gym {
-    @Prop({ required: true, unique: true })
-    name: string;
+  @Prop({ required: true, unique: true })
+  name: string;
 
   @Prop({ required: true })
   address: string;
 
-    @Prop({ required: true, unique: true })
-    phone: string;
+  @Prop({ required: true, unique: true })
+  phone: string;
 
   @Prop()
   logo: string;
