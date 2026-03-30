@@ -15,21 +15,28 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
+  // helper
+  private async ensureUniqueGymAdmin(gymId?: any, excludeUserId?: string) {
+    if (!gymId) {
+      throw new BadRequestException('Admin must be assigned to a gym');
+    }
+
+    const query: any = { role: UserRole.ADMIN, gymId };
+    if (excludeUserId) {
+      query._id = { $ne: excludeUserId };
+    }
+
+    const existingAdmin = await this.userModel.findOne(query).exec();
+    if (existingAdmin) {
+      throw new ConflictException('This gym already has an admin');
+    }
+  }
+
   async create(createUserDto: CreateUserDto): Promise<User> {
     const { password, role, gymId, ...rest } = createUserDto;
 
     if (role === UserRole.ADMIN) {
-      if (!gymId) {
-        throw new BadRequestException('Admin must be assigned to a gym');
-      }
-
-      const existingAdmin = await this.userModel
-        .findOne({ role: UserRole.ADMIN, gymId })
-        .exec();
-
-      if (existingAdmin) {
-        throw new ConflictException('This gym already has an admin');
-      }
+      await this.ensureUniqueGymAdmin(gymId);
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -40,6 +47,7 @@ export class UsersService {
       gymId,
       passwordHash,
     });
+    
     return createdUser.save();
   }
 
@@ -48,10 +56,7 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User | null> {
-    const user = await this.userModel
-      .findById(id)
-      .select('-passwordHash')
-      .exec();
+    const user = await this.userModel.findById(id).select('-passwordHash').exec();
     if (!user) {
       throw new NotFoundException(`User with ID "${id}" not found`);
     }
@@ -75,36 +80,14 @@ export class UsersService {
     const nextGymId = gymId ?? existingUser.gymId;
 
     if (nextRole === UserRole.ADMIN) {
-      if (!nextGymId) {
-        throw new BadRequestException('Admin must be assigned to a gym');
-      }
-
-      const existingAdmin = await this.userModel
-        .findOne({
-          role: UserRole.ADMIN,
-          gymId: nextGymId,
-          _id: { $ne: id },
-        })
-        .exec();
-
-      if (existingAdmin) {
-        throw new ConflictException('This gym already has an admin');
-      }
+      await this.ensureUniqueGymAdmin(nextGymId, id);
     }
 
     const updateData: any = { ...rest };
-
-    if (role !== undefined) {
-      updateData.role = role;
-    }
-
-    if (gymId !== undefined) {
-      updateData.gymId = gymId;
-    }
-
-    if (password) {
-      updateData.passwordHash = await bcrypt.hash(password, 10);
-    }
+    
+    if (role !== undefined) updateData.role = role;
+    if (gymId !== undefined) updateData.gymId = gymId;
+    if (password) updateData.passwordHash = await bcrypt.hash(password, 10);
 
     const updatedUser = await this.userModel
       .findByIdAndUpdate(id, updateData, { new: true })
