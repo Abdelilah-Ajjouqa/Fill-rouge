@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+import { useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, User as UserIcon } from 'lucide-react';
-import api from '../../api/axios';
-import type { RootState } from '../../store/store';
-import type { Subscription } from '../../types/models';
+import type { RootState, AppDispatch } from '../../store/store';
+import { fetchMySubscriptions } from '../../store/slices/subscriptionsSlice';
 import { StatCard } from './StatCard';
 import {
   buildMemberScheduleEntries,
@@ -33,50 +31,18 @@ const formatSessionDate = (date: Date) => {
 
 export const MemberSchedulePage = () => {
   const user = useSelector((state: RootState) => state.auth.user);
-  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useDispatch<AppDispatch>();
+  const { subscriptions, isLoading, error } = useSelector(
+    (state: RootState) => state.subscriptions,
+  );
 
   useEffect(() => {
     if (!user) {
       return;
     }
 
-    let isActive = true;
-
-    const fetchSchedule = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await api.get<Subscription[]>('/subscriptions/me');
-        if (!isActive) {
-          return;
-        }
-        setSubscriptions(response.data);
-      } catch (err) {
-        if (!isActive) {
-          return;
-        }
-
-        let message = 'Failed to load schedule.';
-        if (axios.isAxiosError(err)) {
-          message = err.response?.data?.message || message;
-        }
-        setError(message);
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchSchedule();
-
-    return () => {
-      isActive = false;
-    };
-  }, [user]);
+    dispatch(fetchMySubscriptions());
+  }, [dispatch, user]);
 
   const activeSubscriptions = useMemo(
     () => subscriptions.filter((sub) => sub.status === 'active'),

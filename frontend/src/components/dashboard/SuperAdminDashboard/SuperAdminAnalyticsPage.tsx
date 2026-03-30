@@ -1,36 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+import { useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Building2, Users, UserCog, DollarSign, Activity, AlertCircle } from 'lucide-react';
-import api from '../../../api/axios';
-import type { RootState } from '../../../store/store';
-import type { Gym, GymRef, Member } from '../../../types/models';
-import type { User } from '../../../types/auth';
+import type { RootState, AppDispatch } from '../../../store/store';
+import { fetchGyms } from '../../../store/slices/gymsSlice';
+import { fetchMembers } from '../../../store/slices/membersSlice';
+import { fetchPayments } from '../../../store/slices/paymentsSlice';
+import { fetchSubscriptions } from '../../../store/slices/subscriptionsSlice';
+import { fetchUsers } from '../../../store/slices/usersSlice';
+import type { Gym, GymRef } from '../../../types/models';
 import { StatCard } from '../StatCard';
-
-type Payment = {
-    _id: string;
-    amount: number;
-    paidAt?: string;
-    gymId?: string | GymRef;
-    subscription?: {
-        member?: {
-            firstName?: string;
-            lastName?: string;
-            email?: string;
-        };
-        activity?: {
-            name?: string;
-        };
-    };
-};
-
-type Subscription = {
-    _id: string;
-    status: string;
-    gymId?: string | GymRef;
-    endDate?: string;
-};
 
 const getGymId = (gymValue?: string | GymRef) => {
     if (!gymValue) {
@@ -55,67 +33,35 @@ const formatDate = (value?: string) => {
 export const SuperAdminAnalyticsPage = () => {
     const userRole = useSelector((state: RootState) => state.auth.user?.role);
     const isSuperAdmin = userRole === 'SUPER_ADMIN';
-
-    const [gyms, setGyms] = useState<Gym[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
-    const [members, setMembers] = useState<Member[]>([]);
-    const [payments, setPayments] = useState<Payment[]>([]);
-    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const dispatch = useDispatch<AppDispatch>();
+    const { gyms, isLoading: gymsLoading, error: gymsError } = useSelector(
+        (state: RootState) => state.gyms,
+    );
+    const { users, isLoading: usersLoading, error: usersError } = useSelector(
+        (state: RootState) => state.users,
+    );
+    const { members, isLoading: membersLoading, error: membersError } = useSelector(
+        (state: RootState) => state.members,
+    );
+    const { payments, isLoading: paymentsLoading, error: paymentsError } = useSelector(
+        (state: RootState) => state.payments,
+    );
+    const { subscriptions, isLoading: subscriptionsLoading, error: subscriptionsError } = useSelector(
+        (state: RootState) => state.subscriptions,
+    );
+    const isLoading = gymsLoading || usersLoading || membersLoading || paymentsLoading || subscriptionsLoading;
+    const error = gymsError || usersError || membersError || paymentsError || subscriptionsError;
 
     useEffect(() => {
         if (!isSuperAdmin) {
             return;
         }
-
-        let isActive = true;
-
-        const fetchAnalytics = async () => {
-            setIsLoading(true);
-            setError(null);
-
-            try {
-                const [gymsResponse, usersResponse, membersResponse, paymentsResponse, subscriptionsResponse] = await Promise.all([
-                    api.get<Gym[]>('/gyms'),
-                    api.get<User[]>('/users'),
-                    api.get<Member[]>('/members'),
-                    api.get<Payment[]>('/payments'),
-                    api.get<Subscription[]>('/subscriptions'),
-                ]);
-
-                if (!isActive) {
-                    return;
-                }
-
-                setGyms(gymsResponse.data);
-                setUsers(usersResponse.data);
-                setMembers(membersResponse.data);
-                setPayments(paymentsResponse.data);
-                setSubscriptions(subscriptionsResponse.data);
-            } catch (err) {
-                if (!isActive) {
-                    return;
-                }
-
-                let message = 'Failed to load analytics data.';
-                if (axios.isAxiosError(err)) {
-                    message = err.response?.data?.message || message;
-                }
-                setError(message);
-            } finally {
-                if (isActive) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        fetchAnalytics();
-
-        return () => {
-            isActive = false;
-        };
-    }, [isSuperAdmin]);
+        dispatch(fetchGyms());
+        dispatch(fetchUsers());
+        dispatch(fetchMembers());
+        dispatch(fetchPayments());
+        dispatch(fetchSubscriptions());
+    }, [dispatch, isSuperAdmin]);
 
     const gymsMap = useMemo(() => {
         const map = new Map<string, Gym>();
@@ -307,8 +253,14 @@ export const SuperAdminAnalyticsPage = () => {
                         <div className="space-y-3">
                             {latestPayments.map((payment) => {
                                 const gymName = gymsMap.get(getGymId(payment.gymId))?.name || 'Unknown Gym';
-                                const memberName = payment.subscription?.member
-                                    ? `${payment.subscription.member.firstName || ''} ${payment.subscription.member.lastName || ''}`.trim()
+                                const subscription = typeof payment.subscription === 'string'
+                                    ? null
+                                    : payment.subscription;
+                                const member = subscription && typeof subscription.member !== 'string'
+                                    ? subscription.member
+                                    : null;
+                                const memberName = member
+                                    ? `${member.firstName || ''} ${member.lastName || ''}`.trim()
                                     : 'Member';
 
                                 return (

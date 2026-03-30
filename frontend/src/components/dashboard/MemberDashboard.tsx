@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+import { useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Activity as ActivityIcon, CreditCard, Calendar } from 'lucide-react';
-import api from '../../api/axios';
-import type { RootState } from '../../store/store';
-import type { Payment, Subscription } from '../../types/models';
+import type { RootState, AppDispatch } from '../../store/store';
+import { fetchMyPayments } from '../../store/slices/paymentsSlice';
+import { fetchMySubscriptions } from '../../store/slices/subscriptionsSlice';
+import type { Payment } from '../../types/models';
 import { getNextMemberSession } from './memberScheduleUtils';
 
 const formatMoney = (value: number) => `${value.toLocaleString()} DH`;
@@ -84,57 +84,24 @@ const formatSessionDate = (date: Date) => {
 
 export const MemberDashboard = () => {
     const user = useSelector((state: RootState) => state.auth.user);
-    const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-    const [payments, setPayments] = useState<Payment[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const dispatch = useDispatch<AppDispatch>();
+    const { subscriptions, isLoading: subscriptionsLoading, error: subscriptionsError } = useSelector(
+        (state: RootState) => state.subscriptions,
+    );
+    const { payments, isLoading: paymentsLoading, error: paymentsError } = useSelector(
+        (state: RootState) => state.payments,
+    );
+    const isLoading = subscriptionsLoading || paymentsLoading;
+    const error = subscriptionsError || paymentsError;
 
     useEffect(() => {
         if (!user) {
             return;
         }
 
-        let isActive = true;
-
-        const fetchDashboard = async () => {
-            setIsLoading(true);
-            setError(null);
-
-            try {
-                const [subscriptionsResponse, paymentsResponse] = await Promise.all([
-                    api.get<Subscription[]>('/subscriptions/me'),
-                    api.get<Payment[]>('/payments/me'),
-                ]);
-
-                if (!isActive) {
-                    return;
-                }
-
-                setSubscriptions(subscriptionsResponse.data);
-                setPayments(paymentsResponse.data);
-            } catch (err) {
-                if (!isActive) {
-                    return;
-                }
-
-                let message = 'Failed to load member dashboard data.';
-                if (axios.isAxiosError(err)) {
-                    message = err.response?.data?.message || message;
-                }
-                setError(message);
-            } finally {
-                if (isActive) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        fetchDashboard();
-
-        return () => {
-            isActive = false;
-        };
-    }, [user]);
+        dispatch(fetchMySubscriptions());
+        dispatch(fetchMyPayments());
+    }, [dispatch, user]);
 
     const activeSubscriptions = useMemo(
         () => subscriptions.filter((sub) => sub.status === 'active'),

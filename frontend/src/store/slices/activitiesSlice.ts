@@ -28,6 +28,26 @@ export const fetchActivities = createAsyncThunk<
   }
 });
 
+export const fetchActivitiesByGym = createAsyncThunk<
+  Activity[],
+  string,
+  { rejectValue: string }
+>("activities/fetchActivitiesByGym", async (gymId, { rejectWithValue }) => {
+  try {
+    const response = await api.get<Activity[]>("/activities", {
+      params: { gymId },
+    });
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch activities",
+      );
+    }
+    return rejectWithValue("Failed to fetch activities");
+  }
+});
+
 export const createActivity = createAsyncThunk<
   Activity,
   ActivityInput,
@@ -82,6 +102,19 @@ const activitiesSlice = createSlice({
       state.activities = action.payload;
     });
     builder.addCase(fetchActivities.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(fetchActivitiesByGym.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchActivitiesByGym.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.activities = action.payload;
+    });
+    builder.addCase(fetchActivitiesByGym.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload as string;
     });

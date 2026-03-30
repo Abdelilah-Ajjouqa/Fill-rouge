@@ -157,7 +157,7 @@ export const CoachSchedulePage = () => {
     [activities],
   );
 
-  const nextSession = useMemo(() => {
+  const nextSession = useMemo<NextSession | null>(() => {
     const now = new Date();
     let next: NextSession | null = null;
 

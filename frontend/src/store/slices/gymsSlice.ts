@@ -45,28 +45,38 @@ export const createGym = createAsyncThunk<Gym, FormData, { rejectValue: string }
 );
 
 // Thunk for Deleting a Gym
-export const deleteGym = createAsyncThunk(
+export const deleteGym = createAsyncThunk<string, string, { rejectValue: string }>(
   'gyms/deleteGym',
   async (id: string, { rejectWithValue }) => {
     try {
       await api.delete(`/gyms/${id}`);
       return id; // Return the ID so we can remove it from the state
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to delete gym');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to delete gym');
+      }
+      return rejectWithValue('Failed to delete gym');
     }
   }
 );
 
 // Thunk for Updating a Gym
-export const updateGym = createAsyncThunk(
+export const updateGym = createAsyncThunk<
+  Gym,
+  { id: string; formData: FormData },
+  { rejectValue: string }
+>(
   'gyms/updateGym',
   async ({ id, formData }: { id: string; formData: FormData }, { rejectWithValue }) => {
     try {
       // Remember: We use PATCH for partial updates
-      const response = await api.patch(`/gyms/${id}`, formData);
+      const response = await api.patch<Gym>(`/gyms/${id}`, formData);
       return response.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.message || 'Failed to update gym');
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue(error.response?.data?.message || 'Failed to update gym');
+      }
+      return rejectWithValue('Failed to update gym');
     }
   }
 );
@@ -114,7 +124,7 @@ const gymsSlice = createSlice({
     });
 
     // Update Gym
-    builder.addCase(updateGym.fulfilled, (state, action: PayloadAction<any>) => {
+    builder.addCase(updateGym.fulfilled, (state, action: PayloadAction<Gym>) => {
       const index = state.gyms.findIndex(gym => gym._id === action.payload._id);
       if (index !== -1) {
         state.gyms[index] = action.payload;

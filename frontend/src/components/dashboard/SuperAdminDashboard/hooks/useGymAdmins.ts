@@ -1,60 +1,38 @@
-import { useEffect, useState } from 'react';
-import api from '../../../../api/axios';
+import { useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState, AppDispatch } from '../../../../store/store';
+import { fetchUsers } from '../../../../store/slices/usersSlice';
 import type { User } from '../../../../types/auth';
 
 type UseGymAdminsResult = {
     admins: User[];
-    setAdmins: React.Dispatch<React.SetStateAction<User[]>>;
     isLoading: boolean;
     error: string | null;
 };
 
 export const useGymAdmins = (gymId?: string): UseGymAdminsResult => {
-    const [admins, setAdmins] = useState<User[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const dispatch = useDispatch<AppDispatch>();
+    const { users, isLoading: usersLoading, error } = useSelector(
+        (state: RootState) => state.users,
+    );
 
     useEffect(() => {
         if (!gymId) {
-            setError('Missing gym id.');
-            setAdmins([]);
             return;
         }
+        dispatch(fetchUsers());
+    }, [dispatch, gymId]);
 
-        let isActive = true;
+    const admins = useMemo(() => {
+        if (!gymId) {
+            return [];
+        }
+        return users.filter((user) => user.role === 'ADMIN' && user.gymId === gymId);
+    }, [gymId, users]);
 
-        const fetchAdmins = async () => {
-            setIsLoading(true);
-            setError(null);
-
-            try {
-                const response = await api.get<User[]>('/users');
-                if (!isActive) {
-                    return;
-                }
-
-                const gymAdmins = response.data.filter(
-                    (user) => user.role === 'ADMIN' && user.gymId === gymId
-                );
-                setAdmins(gymAdmins);
-            } catch (err) {
-                if (!isActive) {
-                    return;
-                }
-                setError('Failed to load admins.');
-            } finally {
-                if (isActive) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        fetchAdmins();
-
-        return () => {
-            isActive = false;
-        };
-    }, [gymId]);
-
-    return { admins, setAdmins, isLoading, error };
+    return {
+        admins,
+        isLoading: Boolean(gymId) && usersLoading,
+        error: gymId ? error : 'Missing gym id.',
+    };
 };

@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
 import { X } from 'lucide-react';
 import { toast } from 'sonner';
-import api from '../../../../api/axios';
-import type { Gym, Member } from '../../../../types/models';
-import type { User } from '../../../../types/auth';
+import type { RootState, AppDispatch } from '../../../../store/store';
+import { createMember, fetchMembersByGym } from '../../../../store/slices/membersSlice';
+import { createUser, fetchUsers } from '../../../../store/slices/usersSlice';
+import type { Gym } from '../../../../types/models';
 import { CoachCreateModal } from '../../modals/CoachCreateModal';
 import type { CoachFormState } from '../../modals/CoachCreateModal';
 import { MemberCreateModal } from '../../modals/MemberCreateModal';
@@ -15,11 +16,6 @@ type GymDetailsModalProps = {
     gym: Gym | null;
     isOpen: boolean;
     onClose: () => void;
-};
-
-type GymDetails = {
-    staff: User[];
-    members: Member[];
 };
 
 const formatDate = (value?: string) => {
@@ -34,10 +30,13 @@ const formatDate = (value?: string) => {
 };
 
 export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) => {
-    const [details, setDetails] = useState<GymDetails>({ staff: [], members: [] });
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [refreshKey, setRefreshKey] = useState(0);
+    const dispatch = useDispatch<AppDispatch>();
+    const { users, isLoading: usersLoading, error: usersError } = useSelector(
+        (state: RootState) => state.users,
+    );
+    const { members, isLoading: membersLoading, error: membersError } = useSelector(
+        (state: RootState) => state.members,
+    );
     const [isCoachModalOpen, setIsCoachModalOpen] = useState(false);
     const [coachForm, setCoachForm] = useState<CoachFormState>({
         firstName: '',
@@ -58,6 +57,9 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
     });
     const [memberError, setMemberError] = useState<string | null>(null);
     const [isMemberSubmitting, setIsMemberSubmitting] = useState(false);
+
+    const isLoading = usersLoading || membersLoading;
+    const error = usersError || membersError;
 
     const handleCoachChange = (field: keyof CoachFormState) => (event: ChangeEvent<HTMLInputElement>) => {
         setCoachForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -87,63 +89,34 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
         });
     };
 
-    const refreshDetails = () => {
-        setRefreshKey((prev) => prev + 1);
-    };
-
     useEffect(() => {
         if (!isOpen || !gym) {
             return;
         }
 
-        let isActive = true;
+        dispatch(fetchUsers());
+        dispatch(fetchMembersByGym(gym._id));
+    }, [dispatch, gym, isOpen]);
 
-        const fetchDetails = async () => {
-            setIsLoading(true);
-            setError(null);
+    const staff = useMemo(() => {
+        if (!gym) {
+            return [];
+        }
 
-            try {
-                const [usersResponse, membersResponse] = await Promise.all([
-                    api.get<User[]>('/users'),
-                    api.get<Member[]>('/members', { params: { gymId: gym._id } }),
-                ]);
+        return users.filter(
+            (user) =>
+                user.gymId === gym._id &&
+                (user.role === 'ADMIN' || user.role === 'COACH')
+        );
+    }, [gym, users]);
 
-                if (!isActive) {
-                    return;
-                }
+    const gymMembers = useMemo(() => {
+        if (!gym) {
+            return [];
+        }
 
-                const staff = usersResponse.data.filter(
-                    (user) =>
-                        user.gymId === gym._id &&
-                        (user.role === 'ADMIN' || user.role === 'COACH')
-                );
-
-                setDetails({ staff, members: membersResponse.data });
-            } catch (err) {
-                if (!isActive) {
-                    return;
-                }
-
-                let message = 'Failed to load club details.';
-                if (axios.isAxiosError(err)) {
-                    message = err.response?.data?.message || message;
-                }
-
-                setError(message);
-                setDetails({ staff: [], members: [] });
-            } finally {
-                if (isActive) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        fetchDetails();
-
-        return () => {
-            isActive = false;
-        };
-    }, [gym, isOpen, refreshKey]);
+        return members.filter((member) => member.gymId === gym._id);
+    }, [gym, members]);
 
     const openCoachModal = () => {
         setCoachError(null);
@@ -182,21 +155,20 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
 
         setIsCoachSubmitting(true);
         try {
-            await api.post('/users', {
+            await dispatch(createUser({
                 firstName: coachForm.firstName.trim(),
                 lastName: coachForm.lastName.trim(),
                 email: coachForm.email.trim(),
                 password: coachForm.password,
                 role: 'COACH',
                 gymId: gym._id,
-            });
+            })).unwrap();
             toast.success('Coach created successfully.');
             closeCoachModal();
-            refreshDetails();
         } catch (err) {
             let message = 'Failed to create coach.';
-            if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || message;
+            if (typeof err === 'string') {
+                message = err;
             }
             setCoachError(message);
         } finally {
@@ -217,7 +189,7 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
             return;
         }
 
-        const payload: Record<string, string> = {
+        const payload = {
             firstName: memberForm.firstName.trim(),
             lastName: memberForm.lastName.trim(),
             email: memberForm.email.trim(),
@@ -235,14 +207,13 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
 
         setIsMemberSubmitting(true);
         try {
-            await api.post('/members', payload);
+            await dispatch(createMember(payload)).unwrap();
             toast.success('Member created successfully.');
             closeMemberModal();
-            refreshDetails();
         } catch (err) {
             let message = 'Failed to create member.';
-            if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || message;
+            if (typeof err === 'string') {
+                message = err;
             }
             setMemberError(message);
         } finally {
@@ -254,9 +225,9 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
         return null;
     }
 
-    const adminCount = details.staff.filter((user) => user.role === 'ADMIN').length;
-    const coachCount = details.staff.filter((user) => user.role === 'COACH').length;
-    const memberPreview = details.members.slice(0, 6);
+    const adminCount = staff.filter((user) => user.role === 'ADMIN').length;
+    const coachCount = staff.filter((user) => user.role === 'COACH').length;
+    const memberPreview = gymMembers.slice(0, 6);
     const hallCount = gym.halls?.length || 0;
     const hallPreview = gym.halls?.slice(0, 6) || [];
 
@@ -318,12 +289,12 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="bg-slate-950/60 border border-white/5 p-4">
                                     <p className="text-[10px] uppercase tracking-widest text-white/40">Staff</p>
-                                    <p className="text-2xl font-bold mt-2">{details.staff.length}</p>
+                                    <p className="text-2xl font-bold mt-2">{staff.length}</p>
                                     <p className="text-xs text-white/40">Admins: {adminCount} · Coaches: {coachCount}</p>
                                 </div>
                                 <div className="bg-slate-950/60 border border-white/5 p-4">
                                     <p className="text-[10px] uppercase tracking-widest text-white/40">Members</p>
-                                    <p className="text-2xl font-bold mt-2">{details.members.length}</p>
+                                    <p className="text-2xl font-bold mt-2">{gymMembers.length}</p>
                                     <p className="text-xs text-white/40">Active members linked</p>
                                 </div>
                             </div>
@@ -346,13 +317,13 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
                                         Add Coach
                                     </button>
                                 </div>
-                                {details.staff.length === 0 ? (
+                                {staff.length === 0 ? (
                                     <div className="p-4 border border-dashed border-white/10 text-white/40 text-sm">
                                         No staff assigned yet.
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {details.staff.map((user) => (
+                                        {staff.map((user) => (
                                             <div
                                                 key={user._id}
                                                 className="bg-slate-950/60 border border-white/5 p-4"
@@ -380,7 +351,7 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
                                         Add Member
                                     </button>
                                 </div>
-                                {details.members.length === 0 ? (
+                                {gymMembers.length === 0 ? (
                                     <div className="p-4 border border-dashed border-white/10 text-white/40 text-sm">
                                         No members found yet.
                                     </div>
@@ -402,9 +373,9 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: GymDetailsModalProps) 
                                                 </span>
                                             </div>
                                         ))}
-                                        {details.members.length > memberPreview.length && (
+                                        {gymMembers.length > memberPreview.length && (
                                             <p className="text-xs text-white/40">
-                                                +{details.members.length - memberPreview.length} more members
+                                                +{gymMembers.length - memberPreview.length} more members
                                             </p>
                                         )}
                                     </div>

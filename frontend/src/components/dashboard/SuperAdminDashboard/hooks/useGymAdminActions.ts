@@ -2,13 +2,12 @@ import {
     useMemo,
     useState,
     type ChangeEvent,
-    type Dispatch,
     type FormEvent,
-    type SetStateAction,
 } from 'react';
-import axios from 'axios';
+import { useDispatch } from 'react-redux';
 import { toast } from 'sonner';
-import api from '../../../../api/axios';
+import type { AppDispatch } from '../../../../store/store';
+import { createUser, deleteUser, updateUser } from '../../../../store/slices/usersSlice';
 import type { User } from '../../../../types/auth';
 
 type FormState = {
@@ -21,7 +20,6 @@ type FormState = {
 type UseGymAdminActionsArgs = {
     gymId?: string;
     admins: User[];
-    setAdmins: Dispatch<SetStateAction<User[]>>;
 };
 
 type UseGymAdminActionsResult = {
@@ -52,8 +50,8 @@ type UseGymAdminActionsResult = {
 export const useGymAdminActions = ({
     gymId,
     admins,
-    setAdmins,
 }: UseGymAdminActionsArgs): UseGymAdminActionsResult => {
+    const dispatch = useDispatch<AppDispatch>();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,12 +85,6 @@ export const useGymAdminActions = ({
         setEditValues({ firstName: '', lastName: '', email: '', password: '' });
         setEditError(null);
         setEditingAdmin(null);
-    };
-
-    const updateAdminState = (updatedAdmin: User) => {
-        setAdmins((prev) => prev.map((admin) => (
-            admin._id === updatedAdmin._id ? updatedAdmin : admin
-        )));
     };
 
     const openCreateModal = () => {
@@ -158,15 +150,13 @@ export const useGymAdminActions = ({
                 role: 'ADMIN',
                 gymId,
             };
-
-            const response = await api.post<User>('/users', payload);
-            setAdmins((prev) => [response.data, ...prev]);
+            await dispatch(createUser(payload)).unwrap();
             toast.success('Admin added successfully.');
             closeCreateModal();
         } catch (err) {
             let message = 'Failed to add admin.';
-            if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || message;
+            if (typeof err === 'string') {
+                message = err;
             }
             setFormError(message);
             toast.error(message);
@@ -197,14 +187,13 @@ export const useGymAdminActions = ({
                 payload.password = editValues.password;
             }
 
-            const response = await api.patch<User>(`/users/${editingAdmin._id}`, payload);
-            updateAdminState(response.data);
+            await dispatch(updateUser({ id: editingAdmin._id, data: payload })).unwrap();
             toast.success('Admin updated successfully.');
             closeEditModal();
         } catch (err) {
             let message = 'Failed to update admin.';
-            if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || message;
+            if (typeof err === 'string') {
+                message = err;
             }
             setEditError(message);
             toast.error(message);
@@ -220,13 +209,12 @@ export const useGymAdminActions = ({
         setIsToggling(true);
 
         try {
-            const response = await api.patch<User>(`/users/${admin._id}`, { isActive: nextState });
-            updateAdminState(response.data);
+            await dispatch(updateUser({ id: admin._id, data: { isActive: nextState } })).unwrap();
             toast.success(nextState ? 'Admin activated.' : 'Admin deactivated.');
         } catch (err) {
             let message = 'Failed to update admin status.';
-            if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || message;
+            if (typeof err === 'string') {
+                message = err;
             }
             toast.error(message);
         } finally {
@@ -243,13 +231,12 @@ export const useGymAdminActions = ({
         setIsDeleting(true);
 
         try {
-            await api.delete(`/users/${admin._id}`);
-            setAdmins((prev) => prev.filter((item) => item._id !== admin._id));
+            await dispatch(deleteUser(admin._id)).unwrap();
             toast.success('Admin deleted.');
         } catch (err) {
             let message = 'Failed to delete admin.';
-            if (axios.isAxiosError(err)) {
-                message = err.response?.data?.message || message;
+            if (typeof err === 'string') {
+                message = err;
             }
             toast.error(message);
         } finally {

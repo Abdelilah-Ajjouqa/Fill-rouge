@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
-import axios from 'axios';
+import { useDispatch, useSelector } from 'react-redux';
 import { Calendar, Clock, AlertTriangle, MapPin } from 'lucide-react';
-import api from '../../../api/axios';
-import type { RootState } from '../../../store/store';
+import type { RootState, AppDispatch } from '../../../store/store';
+import { fetchActivities, fetchActivitiesByGym } from '../../../store/slices/activitiesSlice';
+import { fetchGyms } from '../../../store/slices/gymsSlice';
 import type { Activity, Gym, Hall, GymRef } from '../../../types/models';
 import { StatCard } from '../StatCard';
 
@@ -54,60 +54,36 @@ const getCoachName = (activity: Activity) => {
 export const SuperAdminSchedulePage = () => {
     const userRole = useSelector((state: RootState) => state.auth.user?.role);
     const isSuperAdmin = userRole === 'SUPER_ADMIN';
-
-    const [gyms, setGyms] = useState<Gym[]>([]);
-    const [activities, setActivities] = useState<Activity[]>([]);
+    const dispatch = useDispatch<AppDispatch>();
+    const { gyms, isLoading: gymsLoading, error: gymsError } = useSelector(
+        (state: RootState) => state.gyms,
+    );
+    const { activities, isLoading: activitiesLoading, error: activitiesError } = useSelector(
+        (state: RootState) => state.activities,
+    );
     const [selectedGymId, setSelectedGymId] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const isLoading = gymsLoading || activitiesLoading;
+    const error = gymsError || activitiesError;
 
     useEffect(() => {
         if (!isSuperAdmin) {
             return;
         }
 
-        let isActive = true;
-        const fetchSchedule = async () => {
-            setIsLoading(true);
-            setError(null);
+        dispatch(fetchGyms());
+    }, [dispatch, isSuperAdmin]);
 
-            try {
-                const [gymsResponse, activitiesResponse] = await Promise.all([
-                    api.get<Gym[]>('/gyms'),
-                    api.get<Activity[]>('/activities', {
-                        params: selectedGymId ? { gymId: selectedGymId } : undefined,
-                    }),
-                ]);
+    useEffect(() => {
+        if (!isSuperAdmin) {
+            return;
+        }
 
-                if (!isActive) {
-                    return;
-                }
-
-                setGyms(gymsResponse.data);
-                setActivities(activitiesResponse.data);
-            } catch (err) {
-                if (!isActive) {
-                    return;
-                }
-
-                let message = 'Failed to load schedule data.';
-                if (axios.isAxiosError(err)) {
-                    message = err.response?.data?.message || message;
-                }
-                setError(message);
-            } finally {
-                if (isActive) {
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        fetchSchedule();
-
-        return () => {
-            isActive = false;
-        };
-    }, [isSuperAdmin, selectedGymId]);
+        if (selectedGymId) {
+            dispatch(fetchActivitiesByGym(selectedGymId));
+        } else {
+            dispatch(fetchActivities());
+        }
+    }, [dispatch, isSuperAdmin, selectedGymId]);
 
     const gymsMap = useMemo(() => {
         const map = new Map<string, Gym>();

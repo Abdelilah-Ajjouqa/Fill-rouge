@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import api from '../../api/axios';
 import type { RootState, AppDispatch } from '../../store/store';
 import { createActivity, fetchActivities, updateActivity } from '../../store/slices/activitiesSlice';
+import { createUser, fetchUsers } from '../../store/slices/usersSlice';
 import type { Activity, Gym, Hall } from '../../types/models';
 import type { User } from '../../types/auth';
 import { CoachCreateModal } from './modals/CoachCreateModal';
@@ -115,7 +116,7 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
                     toast.error(typeof result.payload === 'string' ? result.payload : 'Failed to save activity.');
                 }
             }
-        } catch (error) {
+        } catch {
             toast.error('Failed to save activity.');
         } finally {
             setIsSaving(false);
@@ -129,142 +130,142 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50">
             <div className="min-h-full flex items-start sm:items-center justify-center p-4 sm:p-6 h-screen">
                 <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-lg w-full animate-fade-in">
-                <div className="flex items-start justify-between mb-6">
-                    <div>
-                        <h3 className="text-xl font-bold">{activity ? 'Edit Activity' : 'Create Activity'}</h3>
-                        <p className="text-white/60 text-sm mt-1">Assign a hall and coach to the activity.</p>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="text-white/50 hover:text-white transition-colors"
-                        aria-label="Close"
-                    >
-                        ✕
-                    </button>
-                </div>
-
-                {!hasHalls && (
-                    <div className="mb-4 p-3 border border-dashed border-white/10 text-white/50 text-xs">
-                        No halls found for this gym. Ask the Super Admin to add halls before creating activities.
-                    </div>
-                )}
-
-                {!hasCoaches && (
-                    <div className="mb-4 p-3 border border-dashed border-white/10 text-white/50 text-xs">
-                        No coaches found. Create a coach before assigning an activity.
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                            Activity Name *
-                        </label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(event) => setName(event.target.value)}
-                            className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
-                            placeholder="e.g. CrossFit Basics"
-                            required
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-start justify-between mb-6">
                         <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                Hall *
-                            </label>
-                            <select
-                                value={hallId}
-                                onChange={(event) => setHallId(event.target.value)}
-                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
-                                required
-                                disabled={!hasHalls}
-                            >
-                                <option value="">Select a hall</option>
-                                {halls.map((hall) => (
-                                    <option key={hall._id || hall.name} value={hall._id}>
-                                        {hall.name} · {hall.type} ({hall.capacity})
-                                    </option>
-                                ))}
-                            </select>
-                            <p className="text-[10px] text-white/40 mt-1">
-                                Hall capacity: {selectedHall ? selectedHall.capacity : 'N/A'}
-                            </p>
+                            <h3 className="text-xl font-bold">{activity ? 'Edit Activity' : 'Create Activity'}</h3>
+                            <p className="text-white/60 text-sm mt-1">Assign a hall and coach to the activity.</p>
                         </div>
-
-                        <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                Coach *
-                            </label>
-                            <select
-                                value={coachId}
-                                onChange={(event) => setCoachId(event.target.value)}
-                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
-                                required
-                                disabled={!hasCoaches}
-                            >
-                                <option value="">Select a coach</option>
-                                {coaches.map((coach) => (
-                                    <option key={coach._id} value={coach._id}>
-                                        {coach.firstName} {coach.lastName}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                Monthly Price (DH) *
-                            </label>
-                            <input
-                                type="number"
-                                min={0}
-                                value={monthlyPrice}
-                                onChange={(event) => setMonthlyPrice(Number(event.target.value))}
-                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
-                                Max Capacity *
-                            </label>
-                            <input
-                                type="number"
-                                min={1}
-                                value={maxCapacity}
-                                onChange={(event) => setMaxCapacity(Number(event.target.value))}
-                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
-                                required
-                            />
-                            <p className="text-[10px] text-white/40 mt-1">
-                                Effective capacity: {effectiveCapacity}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3 pt-4 border-t border-white/5">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 bg-white/5 text-white/60 py-3 text-xs font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white transition-colors"
+                            className="text-white/50 hover:text-white transition-colors"
+                            aria-label="Close"
                         >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={isSaving || !hasHalls || !hasCoaches}
-                            className="flex-1 bg-brand text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50"
-                        >
-                            {isSaving ? 'Saving...' : activity ? 'Update Activity' : 'Create Activity'}
+                            ✕
                         </button>
                     </div>
-                </form>
+
+                    {!hasHalls && (
+                        <div className="mb-4 p-3 border border-dashed border-white/10 text-white/50 text-xs">
+                            No halls found for this gym. Ask the Super Admin to add halls before creating activities.
+                        </div>
+                    )}
+
+                    {!hasCoaches && (
+                        <div className="mb-4 p-3 border border-dashed border-white/10 text-white/50 text-xs">
+                            No coaches found. Create a coach before assigning an activity.
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                Activity Name *
+                            </label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(event) => setName(event.target.value)}
+                                className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors"
+                                placeholder="e.g. CrossFit Basics"
+                                required
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                    Hall *
+                                </label>
+                                <select
+                                    value={hallId}
+                                    onChange={(event) => setHallId(event.target.value)}
+                                    className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                    required
+                                    disabled={!hasHalls}
+                                >
+                                    <option value="">Select a hall</option>
+                                    {halls.map((hall) => (
+                                        <option key={hall._id || hall.name} value={hall._id}>
+                                            {hall.name} · {hall.type} ({hall.capacity})
+                                        </option>
+                                    ))}
+                                </select>
+                                <p className="text-[10px] text-white/40 mt-1">
+                                    Hall capacity: {selectedHall ? selectedHall.capacity : 'N/A'}
+                                </p>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                    Coach *
+                                </label>
+                                <select
+                                    value={coachId}
+                                    onChange={(event) => setCoachId(event.target.value)}
+                                    className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                    required
+                                    disabled={!hasCoaches}
+                                >
+                                    <option value="">Select a coach</option>
+                                    {coaches.map((coach) => (
+                                        <option key={coach._id} value={coach._id}>
+                                            {coach.firstName} {coach.lastName}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                    Monthly Price (DH) *
+                                </label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    value={monthlyPrice}
+                                    onChange={(event) => setMonthlyPrice(Number(event.target.value))}
+                                    className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">
+                                    Max Capacity *
+                                </label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={maxCapacity}
+                                    onChange={(event) => setMaxCapacity(Number(event.target.value))}
+                                    className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
+                                    required
+                                />
+                                <p className="text-[10px] text-white/40 mt-1">
+                                    Effective capacity: {effectiveCapacity}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-4 border-t border-white/5">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="flex-1 bg-white/5 text-white/60 py-3 text-xs font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={isSaving || !hasHalls || !hasCoaches}
+                                className="flex-1 bg-brand text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-50"
+                            >
+                                {isSaving ? 'Saving...' : activity ? 'Update Activity' : 'Create Activity'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -280,8 +281,10 @@ export const ActivitiesPage = () => {
     const { activities, isLoading: activitiesLoading, error: activitiesError } = useSelector(
         (state: RootState) => state.activities,
     );
+    const { users, isLoading: usersLoading, error: usersError } = useSelector(
+        (state: RootState) => state.users,
+    );
 
-    const [coaches, setCoaches] = useState<User[]>([]);
     const [halls, setHalls] = useState<Hall[]>([]);
     const [gymName, setGymName] = useState('');
     const [isAdminLoading, setIsAdminLoading] = useState(false);
@@ -333,16 +336,24 @@ export const ActivitiesPage = () => {
 
         setIsCoachSubmitting(true);
         try {
-            await api.post('/users', {
+            const result = await dispatch(createUser({
                 firstName: coachForm.firstName.trim(),
                 lastName: coachForm.lastName.trim(),
                 email: coachForm.email.trim(),
                 password: coachForm.password,
                 role: 'COACH',
-            });
-            toast.success('Coach created successfully.');
-            closeCoachModal();
-            loadAdminResources();
+            }));
+
+            if (createUser.fulfilled.match(result)) {
+                toast.success('Coach created successfully.');
+                closeCoachModal();
+            } else {
+                setCoachError(
+                    typeof result.payload === 'string'
+                        ? result.payload
+                        : 'Failed to create coach.',
+                );
+            }
         } catch (err) {
             let message = 'Failed to create coach.';
             if (axios.isAxiosError(err)) {
@@ -364,13 +375,18 @@ export const ActivitiesPage = () => {
         return map;
     }, [halls]);
 
+    const coachList = useMemo(
+        () => users.filter((entry) => entry.role === 'COACH'),
+        [users],
+    );
+
     const coachLookup = useMemo(() => {
         const map = new Map<string, User>();
-        coaches.forEach((coach) => {
+        coachList.forEach((coach) => {
             map.set(coach._id, coach);
         });
         return map;
-    }, [coaches]);
+    }, [coachList]);
 
     const gymId = user?.gymId;
 
@@ -386,16 +402,9 @@ export const ActivitiesPage = () => {
         setPageError(null);
 
         try {
-            const [gymResponse, usersResponse] = await Promise.all([
-                api.get<Gym>(`/gyms/${gymId}`),
-                api.get<User[]>('/users'),
-            ]);
-
+            const gymResponse = await api.get<Gym>(`/gyms/${gymId}`);
             setGymName(gymResponse.data.name);
             setHalls(gymResponse.data.halls ?? []);
-
-            const coachList = usersResponse.data.filter((entry) => entry.role === 'COACH');
-            setCoaches(coachList);
         } catch (fetchError) {
             let message = 'Failed to load activities.';
             if (axios.isAxiosError(fetchError)) {
@@ -420,15 +429,15 @@ export const ActivitiesPage = () => {
 
         if (isAdmin) {
             loadAdminResources();
+            dispatch(fetchUsers());
         } else {
             setGymName('');
             setHalls([]);
-            setCoaches([]);
         }
-    }, [user, isAdmin, isCoach, refreshActivities, loadAdminResources]);
+    }, [user, isAdmin, isCoach, refreshActivities, loadAdminResources, dispatch]);
 
-    const isLoading = activitiesLoading || isAdminLoading;
-    const errorMessage = pageError || activitiesError;
+    const isLoading = activitiesLoading || isAdminLoading || (isAdmin ? usersLoading : false);
+    const errorMessage = pageError || activitiesError || (isAdmin ? usersError : null);
 
     if (!user) {
         return (
@@ -511,7 +520,7 @@ export const ActivitiesPage = () => {
                     </div>
                     <div className="bg-slate-900 border border-white/10 p-4">
                         <p className="text-[10px] uppercase tracking-widest text-white/40">Coaches</p>
-                        <p className="text-2xl font-bold mt-2">{coaches.length}</p>
+                        <p className="text-2xl font-bold mt-2">{coachList.length}</p>
                         <p className="text-xs text-white/40">Available to assign</p>
                     </div>
                     <div className="bg-slate-900 border border-white/10 p-4">
@@ -596,7 +605,7 @@ export const ActivitiesPage = () => {
                     isOpen={isModalOpen}
                     activity={selectedActivity}
                     halls={halls}
-                    coaches={coaches}
+                    coaches={coachList}
                     onClose={handleModalClose}
                     onSaved={handleSaved}
                 />

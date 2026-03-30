@@ -8,7 +8,7 @@ import { useGymAdmins } from './hooks/useGymAdmins';
 export const GymAdminsPage = () => {
     const { gymId } = useParams();
     const navigate = useNavigate();
-    const { admins, setAdmins, isLoading, error } = useGymAdmins(gymId);
+    const { admins, isLoading, error } = useGymAdmins(gymId);
     const {
         hasAdmin,
         isCreateModalOpen,
@@ -32,7 +32,7 @@ export const GymAdminsPage = () => {
         handleUpdateAdmin,
         handleToggleActive,
         handleDeleteAdmin,
-    } = useGymAdminActions({ gymId, admins, setAdmins });
+    } = useGymAdminActions({ gymId, admins });
 
     return (
         <div className="p-8 space-y-6">
