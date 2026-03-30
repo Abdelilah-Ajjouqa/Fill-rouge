@@ -127,9 +127,9 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
     const hasCoaches = coaches.length > 0;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50">
-            <div className="min-h-full flex items-start sm:items-center justify-center p-4 sm:p-6 h-screen">
-                <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-lg w-full animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto">
+            <div className="min-h-full flex items-start sm:items-center justify-center p-4 sm:p-6">
+                <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-lg w-full animate-fade-in max-h-[90vh] overflow-y-auto my-6">
                     <div className="flex items-start justify-between mb-6">
                         <div>
                             <h3 className="text-xl font-bold">{activity ? 'Edit Activity' : 'Create Activity'}</h3>
@@ -394,7 +394,6 @@ export const ActivitiesPage = () => {
         if (!isAdmin || !gymId) {
             setGymName('');
             setHalls([]);
-            setCoaches([]);
             return;
         }
 
