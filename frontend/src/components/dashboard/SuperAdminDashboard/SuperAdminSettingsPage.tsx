@@ -38,7 +38,8 @@ export const SuperAdminSettingsPage = () => {
         const { firstName, lastName, email, password } = accountForm;
         if (!firstName.trim() || !lastName.trim() || !email.trim()) return setAccountError('First name, last name, and email are required.');
 
-        setAccountError(null); setIsAccountSaving(true);
+        setAccountError(null);
+        setIsAccountSaving(true);
         try {
             const payload = { firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), ...(password.trim() ? { password } : {}) };
             await api.patch(`/users/${user._id}`, payload);
