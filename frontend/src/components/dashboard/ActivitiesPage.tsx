@@ -88,6 +88,11 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
             return;
         }
 
+        if (selectedHall && capacityValue > selectedHall.capacity) {
+            toast.error(`Max capacity cannot exceed hall capacity (${selectedHall.capacity}).`);
+            return;
+        }
+
         const payload = {
             name: name.trim(),
             coach: coachId,
@@ -127,7 +132,7 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
     const hasCoaches = coaches.length > 0;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 overflow-y-auto h-screen">
             <div className="min-h-full flex items-start sm:items-center justify-center p-4 sm:p-6">
                 <div className="bg-slate-900 border border-brand/40 shadow-2xl shadow-brand/10 p-6 max-w-lg w-full animate-fade-in max-h-[90vh] overflow-y-auto my-6">
                     <div className="flex items-start justify-between mb-6">
@@ -179,7 +184,14 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
                                 </label>
                                 <select
                                     value={hallId}
-                                    onChange={(event) => setHallId(event.target.value)}
+                                    onChange={(event) => {
+                                        const nextHallId = event.target.value;
+                                        setHallId(nextHallId);
+                                        const nextHall = halls.find((hall) => hall._id === nextHallId);
+                                        if (nextHall && maxCapacity > nextHall.capacity) {
+                                            setMaxCapacity(nextHall.capacity);
+                                        }
+                                    }}
                                     className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
                                     required
                                     disabled={!hasHalls}
@@ -238,8 +250,21 @@ const ActivityModal = ({ isOpen, activity, halls, coaches, onClose, onSaved }: A
                                 <input
                                     type="number"
                                     min={1}
+                                    max={selectedHall?.capacity}
                                     value={maxCapacity}
-                                    onChange={(event) => setMaxCapacity(Number(event.target.value))}
+                                    onChange={(event) => {
+                                        const nextValue = Number(event.target.value);
+                                        if (!Number.isFinite(nextValue)) {
+                                            return;
+                                        }
+
+                                        if (selectedHall) {
+                                            setMaxCapacity(Math.min(nextValue, selectedHall.capacity));
+                                            return;
+                                        }
+
+                                        setMaxCapacity(nextValue);
+                                    }}
                                     className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white focus:outline-none focus:border-brand transition-colors"
                                     required
                                 />
