@@ -3,44 +3,43 @@ import type { Activity, ScheduleSlot, Subscription } from '../../../types/models
 export type MemberScheduleEntry = { id: string; day: string; startTime: string; endTime: string; activityName: string; coachName: string; };
 export type MemberNextSession = MemberScheduleEntry & { date: Date; };
 
-const DAY_SORT_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const JS_DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-const getActivityFromSubscription = (sub: Subscription) => !sub || typeof sub.activity === 'string' ? null : sub.activity;
+const getActivityFromSubscription = (subscription: Subscription) => !subscription || typeof subscription.activity === 'string' ? null : subscription.activity;
 
-const getCoachName = (act: Activity) => {
-    if (!act.coach || typeof act.coach === 'string') return 'Coach assigned';
-    return `${act.coach.firstName || ''} ${act.coach.lastName || ''}`.trim() || act.coach.email || 'Coach assigned';
+const getCoachName = (activity: Activity) => {
+    if (!activity.coach || typeof activity.coach === 'string') return 'Coach assigned';
+    return `${activity.coach.firstName || ''} ${activity.coach.lastName || ''}`.trim() || activity.coach.email || 'Coach assigned';
 };
 
 const getNextOccurrence = (slot: ScheduleSlot, now: Date) => {
     const dayIndex = JS_DAY_ORDER.indexOf(slot.day);
     if (dayIndex === -1) return null;
-    const [h, m] = slot.startTime.split(':').map(Number);
-    if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+    const [hours, minutes] = slot.startTime.split(':').map(Number);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
     const candidate = new Date(now);
-    const d = (dayIndex - now.getDay() + 7) % 7;
-    candidate.setDate(now.getDate() + d);
-    candidate.setHours(h, m, 0, 0);
-    if (d === 0 && candidate <= now) candidate.setDate(candidate.getDate() + 7);
+    const daysUntilNext = (dayIndex - now.getDay() + 7) % 7;
+    candidate.setDate(now.getDate() + daysUntilNext);
+    candidate.setHours(hours, minutes, 0, 0);
+    if (daysUntilNext === 0 && candidate <= now) candidate.setDate(candidate.getDate() + 7);
     return candidate;
 };
 
 export const buildMemberScheduleEntries = (subscriptions: Subscription[]) => {
-    return subscriptions.flatMap(sub => {
-        const act = getActivityFromSubscription(sub);
-        return act ? (act.schedule || []).filter(s => s.day && s.startTime && s.endTime).map((s, i) => ({ id: `${sub._id}-${s.day}-${i}`, day: s.day, startTime: s.startTime, endTime: s.endTime, activityName: act.name, coachName: getCoachName(act) })) : [];
-    }).sort((a, b) => {
-        const ia = DAY_SORT_ORDER.indexOf(a.day) === -1 ? 7 : DAY_SORT_ORDER.indexOf(a.day);
-        const ib = DAY_SORT_ORDER.indexOf(b.day) === -1 ? 7 : DAY_SORT_ORDER.indexOf(b.day);
-        return ia !== ib ? ia - ib : a.startTime.localeCompare(b.startTime);
+    return subscriptions.flatMap(subscription => {
+        const activity = getActivityFromSubscription(subscription);
+        return activity ? (activity.schedule || []).filter(scheduleSlot => scheduleSlot.day && scheduleSlot.startTime && scheduleSlot.endTime).map((scheduleSlot, index) => ({ id: `${subscription._id}-${scheduleSlot.day}-${index}`, day: scheduleSlot.day, startTime: scheduleSlot.startTime, endTime: scheduleSlot.endTime, activityName: activity.name, coachName: getCoachName(activity) })) : [];
+    }).sort((entryA, entryB) => {
+        const indexA = JS_DAY_ORDER.indexOf(entryA.day) === -1 ? 7 : JS_DAY_ORDER.indexOf(entryA.day);
+        const indexB = JS_DAY_ORDER.indexOf(entryB.day) === -1 ? 7 : JS_DAY_ORDER.indexOf(entryB.day);
+        return indexA !== indexB ? indexA - indexB : entryA.startTime.localeCompare(entryB.startTime);
     });
 };
 
 export const getNextMemberSession = (subscriptions: Subscription[]): MemberNextSession | null => {
     const now = new Date();
-    return subscriptions.flatMap(sub => {
-        const act = getActivityFromSubscription(sub);
-        return act ? (act.schedule || []).map((s, i) => ({ id: `${sub._id}-${s.day}-${i}`, day: s.day, startTime: s.startTime, endTime: s.endTime, activityName: act.name, coachName: getCoachName(act), date: getNextOccurrence(s, now) })) : [];
-    }).filter((s): s is MemberNextSession => !!s.date).reduce<MemberNextSession | null>((closest, s) => !closest || s.date < closest.date ? s : closest, null);
+    return subscriptions.flatMap(subscription => {
+        const activity = getActivityFromSubscription(subscription);
+        return activity ? (activity.schedule || []).map((scheduleSlot, index) => ({ id: `${subscription._id}-${scheduleSlot.day}-${index}`, day: scheduleSlot.day, startTime: scheduleSlot.startTime, endTime: scheduleSlot.endTime, activityName: activity.name, coachName: getCoachName(activity), date: getNextOccurrence(scheduleSlot, now) })) : [];
+    }).filter((session): session is MemberNextSession => !!session.date).reduce<MemberNextSession | null>((closest, session) => !closest || session.date < closest.date ? session : closest, null);
 };
