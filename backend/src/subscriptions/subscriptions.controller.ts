@@ -1,3 +1,4 @@
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -17,6 +18,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/schemas/user.schema';
 
+@ApiTags('Subscriptions')
 @Controller('subscriptions')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class SubscriptionsController {
@@ -24,6 +26,7 @@ export class SubscriptionsController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({ summary: 'Create a new subscription' })
   create(
     @Request() req: any,
     @Body() createSubscriptionDto: CreateSubscriptionDto,
@@ -36,6 +39,7 @@ export class SubscriptionsController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Retrieve all subscriptions (filtered by role and gym)' })
   findAll(@Request() req: any, @Query('gymId') gymId?: string) {
     if (req.user.role === UserRole.SUPER_ADMIN) {
       return this.subscriptionsService.findAll(gymId);
@@ -45,18 +49,21 @@ export class SubscriptionsController {
 
   @Get('activity/:activityId')
   @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({ summary: 'Retrieve subscriptions by activity ID' })
   findByActivity(@Request() req: any, @Param('activityId') activityId: string) {
     return this.subscriptionsService.findByActivity(activityId, req.user.gymId);
   }
 
   @Get('member/:memberId')
   @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({ summary: 'Retrieve subscriptions by member ID' })
   findByMember(@Request() req: any, @Param('memberId') memberId: string) {
     return this.subscriptionsService.findByMember(memberId, req.user.gymId);
   }
 
   @Get('me')
   @Roles(UserRole.MEMBER)
+  @ApiOperation({ summary: 'Retrieve subscriptions for the current logged-in member' })
   findMySubscriptions(@Request() req: any) {
     return this.subscriptionsService.findByMember(
       req.user.userId,
@@ -66,12 +73,14 @@ export class SubscriptionsController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({ summary: 'Retrieve a specific subscription by ID' })
   findOne(@Request() req: any, @Param('id') id: string) {
     return this.subscriptionsService.findOne(id, req.user.gymId);
   }
 
   @Patch(':id')
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update a specific subscription by ID' })
   update(
     @Request() req: any,
     @Param('id') id: string,

@@ -1,3 +1,4 @@
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -18,6 +19,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/schemas/user.schema';
 
+@ApiTags('Activities')
 @Controller('activities')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ActivitiesController {
@@ -25,12 +27,14 @@ export class ActivitiesController {
 
   @Post()
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create a new activity' })
   create(@Request() req: any, @Body() createActivityDto: CreateActivityDto) {
     return this.activitiesService.create(createActivityDto, req.user.gymId);
   }
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Retrieve all activities (filtered by role and gym)' })
   findAll(@Request() req: any, @Query('gymId') gymId?: string) {
     if (req.user.role === UserRole.COACH) {
       // Coach sees only their assigned activities in this gym
@@ -48,12 +52,14 @@ export class ActivitiesController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({ summary: 'Retrieve a specific activity by ID' })
   findOne(@Request() req: any, @Param('id') id: string) {
     return this.activitiesService.findOne(id, req.user.gymId);
   }
 
   @Patch(':id')
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update a specific activity by ID' })
   update(
     @Request() req: any,
     @Param('id') id: string,
@@ -64,6 +70,7 @@ export class ActivitiesController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete a specific activity by ID' })
   remove(@Request() req: any, @Param('id') id: string) {
     return this.activitiesService.remove(id, req.user.gymId);
   }

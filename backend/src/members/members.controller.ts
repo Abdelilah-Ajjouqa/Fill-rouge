@@ -1,3 +1,4 @@
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -19,6 +20,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/schemas/user.schema';
 
+@ApiTags('Members')
 @Controller('members')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class MembersController {
@@ -26,6 +28,7 @@ export class MembersController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Create a new member' })
   create(@Request() req: any, @Body() createMemberDto: CreateMemberDto) {
     if (req.user.role === UserRole.SUPER_ADMIN) {
       if (!createMemberDto.gymId) {
@@ -38,6 +41,7 @@ export class MembersController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Retrieve all members (filtered by role and gym)' })
   findAll(@Request() req: any, @Query('gymId') gymId?: string) {
     if (req.user.role === UserRole.SUPER_ADMIN) {
       return this.membersService.findAll(gymId);
@@ -49,12 +53,14 @@ export class MembersController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({ summary: 'Retrieve a specific member by ID' })
   findOne(@Request() req: any, @Param('id') id: string) {
     return this.membersService.findOne(id, req.user.gymId);
   }
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({ summary: 'Update a specific member by ID' })
   update(
     @Request() req: any,
     @Param('id') id: string,
@@ -65,6 +71,7 @@ export class MembersController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete a specific member by ID' })
   remove(@Request() req: any, @Param('id') id: string) {
     // Only Admin can delete members
     return this.membersService.remove(id, req.user.gymId);

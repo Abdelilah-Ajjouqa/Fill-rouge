@@ -10,6 +10,14 @@ export interface GymFormProps { gym?: Gym; onSuccess: () => void; onCancel: () =
 
 const resolveGymLogoUrl = (logoString?: string | null) => logoString ? (logoString.startsWith('http') || logoString.startsWith('data:') ? logoString : `${import.meta.env.VITE_API_BASE_URL || ''}${logoString.startsWith('/') ? '' : '/uploads/'}${logoString}`) : null;
 
+const InputField = ({ label, type, value, onChange, placeholder, max, pattern, textContent }: any) => (
+    <div>
+        <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">{label} *</label>
+        <input type={type} value={value} onChange={onChange} required maxLength={max} pattern={pattern} placeholder={placeholder} className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors" />
+        {textContent && <p className="text-[10px] text-white/20 mt-1">{textContent}</p>}
+    </div>
+);
+
 export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
     const dispatch = useDispatch<AppDispatch>();
     const { isLoading, error } = useSelector((state: RootState) => state.gyms);
@@ -44,26 +52,19 @@ export const GymForm = ({ gym, onSuccess, onCancel }: GymFormProps) => {
         if (file && file.type.startsWith('image/') && file.size <= 2097152) setLogo({ file, preview: URL.createObjectURL(file) });
     };
 
-    const Input = ({ label, field, type, placeholder, max, pattern, textContent }: any) => (
-        <div>
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">{label} *</label>
-            <input type={type} value={state[field as keyof typeof state]} onChange={event => {
-                let value = event.target.value;
-                if (field === 'phone') { value = value.replace(/\D/g, ''); if (value.length > 10) return; }
-                setState(prevState => ({ ...prevState, [field]: value }));
-            }} required maxLength={max} pattern={pattern} placeholder={placeholder} className="w-full bg-slate-950 border border-white/10 p-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-brand transition-colors" />
-            {textContent && <p className="text-[10px] text-white/20 mt-1">{textContent}</p>}
-        </div>
-    );
-
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
             {error && <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs">{error}</div>}
             
             <div className="space-y-4">
-                <Input label="Gym Name" field="name" type="text" placeholder="e.g. FitClub Downtown" />
-                <Input label="Address" field="address" type="text" placeholder="e.g. 123 Main St, Casablanca" />
-                <Input label="Phone Number" field="phone" type="tel" placeholder="e.g. 0600000000" max={10} pattern="\d{10}" textContent={`${state.phone.length}/10 digits`} />
+                <InputField label="Gym Name" type="text" value={state.name} onChange={(e: any) => setState(s => ({ ...s, name: e.target.value }))} placeholder="e.g. FitClub Downtown" />
+                <InputField label="Address" type="text" value={state.address} onChange={(e: any) => setState(s => ({ ...s, address: e.target.value }))} placeholder="e.g. 123 Main St, Casablanca" />
+                <InputField label="Phone Number" type="tel" value={state.phone} onChange={(e: any) => {
+                    let val = e.target.value;
+                    val = val.replace(/\D/g, '');
+                    if (val.length > 10) return;
+                    setState(s => ({ ...s, phone: val }));
+                }} placeholder="e.g. 0600000000" max={10} pattern="\d{10}" textContent={`${state.phone.length}/10 digits`} />
 
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
