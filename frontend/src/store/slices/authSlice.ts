@@ -28,7 +28,7 @@ export const loginUser = createAsyncThunk<void, Record<string, string>, { reject
 
       // 3. Chain the /auth/me call to get the user's role and details
       await dispatch(fetchProfile());
-    } catch (error) {
+    } catch (error: any) {
       if (axios.isAxiosError(error)) {
         return rejectWithValue(error.response?.data?.message || 'Login failed');
       }
@@ -44,7 +44,10 @@ export const fetchProfile = createAsyncThunk<User, void, { rejectValue: string }
     try {
       const response = await api.get<User>('/auth/me');
       return response.data;
-    } catch {
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.message) {
+        return rejectWithValue(error.response.data.message);
+      }
       return rejectWithValue('Failed to fetch profile');
     }
   }
