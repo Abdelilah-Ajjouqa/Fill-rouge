@@ -1,3 +1,4 @@
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -14,6 +15,7 @@ import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from 'src/users/schemas/user.schema';
 
+@ApiTags('Payments')
 @Controller('payments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PaymentsController {
@@ -21,12 +23,14 @@ export class PaymentsController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({ summary: 'Create a new payment' })
   create(@Request() req: any, @Body() createPaymentDto: CreatePaymentDto) {
     return this.paymentsService.create(createPaymentDto, req.user.gymId);
   }
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Retrieve all payments (filtered by role and gym)' })
   findAll(@Request() req: any, @Query('gymId') gymId?: string) {
     if (req.user.role === UserRole.SUPER_ADMIN) {
       return this.paymentsService.findAll(gymId);
@@ -36,6 +40,7 @@ export class PaymentsController {
 
   @Get('unpaid')
   @Roles(UserRole.ADMIN, UserRole.COACH, UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Retrieve all unpaid payments (filtered by role and gym)' })
   findUnpaid(@Request() req: any, @Query('gymId') gymId?: string) {
     if (req.user.role === UserRole.SUPER_ADMIN) {
       return this.paymentsService.findUnpaid(gymId);
@@ -45,6 +50,7 @@ export class PaymentsController {
 
   @Get('me')
   @Roles(UserRole.MEMBER)
+  @ApiOperation({ summary: 'Retrieve payments for the current logged-in member' })
   findMyPayments(@Request() req: any) {
     return this.paymentsService.findByMember(req.user.userId, req.user.gymId);
   }

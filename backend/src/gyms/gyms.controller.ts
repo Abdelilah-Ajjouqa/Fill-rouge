@@ -1,3 +1,4 @@
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -29,6 +30,7 @@ const logoStorage = diskStorage({
   },
 });
 
+@ApiTags('Gyms')
 @Controller('gyms')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class GymsController {
@@ -37,6 +39,7 @@ export class GymsController {
   @Post()
   @Roles(UserRole.SUPER_ADMIN)
   @UseInterceptors(FileInterceptor('logo', { storage: logoStorage }))
+  @ApiOperation({ summary: 'Create a new gym with an optional logo upload' })
   create(
     @Body() createGymDto: CreateGymDto,
     @UploadedFile() file?: Express.Multer.File,
@@ -49,12 +52,14 @@ export class GymsController {
 
   @Get()
   @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Retrieve all gyms' })
   findAll() {
     return this.gymsService.findAll();
   }
 
   @Get(':id')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @ApiOperation({ summary: 'Retrieve a specific gym by ID' })
   findOne(@Param('id') id: string) {
     return this.gymsService.findOne(id);
   }
@@ -62,6 +67,7 @@ export class GymsController {
   @Patch(':id')
   @Roles(UserRole.SUPER_ADMIN)
   @UseInterceptors(FileInterceptor('logo', { storage: logoStorage }))
+  @ApiOperation({ summary: 'Update a specific gym by ID' })
   update(
     @Param('id') id: string,
     @Body() updateGymDto: UpdateGymDto,
@@ -75,6 +81,7 @@ export class GymsController {
 
   @Delete(':id')
   @Roles(UserRole.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Delete a specific gym by ID' })
   remove(@Param('id') id: string) {
     return this.gymsService.remove(id);
   }
