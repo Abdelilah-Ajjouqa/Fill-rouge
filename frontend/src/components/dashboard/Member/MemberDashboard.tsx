@@ -9,15 +9,17 @@ import { getNextMemberSession } from './memberScheduleUtils';
 const formatMoney = (value: number) => `${value.toLocaleString()} DH`;
 
 const formatRemaining = (endDateString: string) => {
-    const end = new Date(endDateString);
-    if (Number.isNaN(end.getTime())) return 'Unknown';
-    const diffDays = Math.ceil((end.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    if (diffDays <= 0) return 'Expired';
-    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'}`;
-    const diffWeeks = Math.ceil(diffDays / 7);
-    if (diffWeeks < 5) return `${diffWeeks} week${diffWeeks === 1 ? '' : 's'}`;
-    const diffMonths = Math.ceil(diffDays / 30);
-    return `${diffMonths} month${diffMonths === 1 ? '' : 's'}`;
+    const diffMs = new Date(endDateString).getTime() - Date.now();
+    if (Number.isNaN(diffMs)) return 'Unknown';
+    
+    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    if (days <= 0) return 'Expired';
+    
+    const pluralize = (val: number, unit: string) => `${val} ${unit}${val === 1 ? '' : 's'}`;
+    
+    if (days < 7) return pluralize(days, 'day');
+    if (days < 30) return pluralize(Math.ceil(days / 7), 'week');
+    return pluralize(Math.ceil(days / 30), 'month');
 };
 
 const getProgress = (startDateString: string, endDateString: string) => {
@@ -44,46 +46,130 @@ export const MemberDashboard = () => {
 
     useEffect(() => { if (user) { dispatch(fetchMySubscriptions()); dispatch(fetchMyPayments()); } }, [dispatch, user]);
 
-    const activeSubscriptions = useMemo(() => subscriptions.filter(sub => sub.status === 'active'), [subscriptions]);
-    const paidSubscriptionIds = useMemo(() => new Set(payments.map(payment => typeof payment.subscription === 'string' ? payment.subscription : payment.subscription?._id).filter(Boolean)), [payments]);
-    const balanceDue = useMemo(() => activeSubscriptions.reduce((total, subscription) => !paidSubscriptionIds.has(subscription._id) && typeof subscription.activity !== 'string' ? total + (subscription.activity?.monthlyPrice || 0) : total, 0), [activeSubscriptions, paidSubscriptionIds]);
-    const nextSession = useMemo(() => getNextMemberSession(activeSubscriptions), [activeSubscriptions]);
+    const activeSubscriptions = useMemo(
+        () => subscriptions.filter(sub => sub.status === 'active'),
+        [subscriptions]
+    );
+
+    const paidSubscriptionIds = useMemo(() => {
+        const ids = payments
+            .map(payment => typeof payment.subscription === 'string' ? payment.subscription : payment.subscription?._id)
+            .filter(Boolean);
+        return new Set(ids);
+    }, [payments]);
+
+    const balanceDue = useMemo(() => {
+        return activeSubscriptions.reduce((total, subscription) => {
+            const isPaid = paidSubscriptionIds.has(subscription._id);
+            
+            if (!isPaid && subscription.activity && typeof subscription.activity !== 'string') {
+                return total + (subscription.activity.monthlyPrice || 0);
+            }
+            return total;
+        }, 0);
+    }, [activeSubscriptions, paidSubscriptionIds]);
+
+    const nextSession = useMemo(
+        () => getNextMemberSession(activeSubscriptions),
+        [activeSubscriptions]
+    );
 
     return (
         <div className="p-8 space-y-8 animate-fade-in">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div><h2 className="text-2xl font-bold tracking-tight">Welcome back, {user ? `${user.firstName} ${user.lastName}`.trim() : 'Member'}</h2><p className="text-white/40 text-sm mt-1">Here is your fitness summary</p></div>
-                <div className="bg-white/5 border border-white/10 px-4 py-2 flex items-center gap-3"><span className="text-[10px] uppercase font-bold text-white/40 tracking-widest">Balance Due</span><span className="text-lg font-bold text-red-400">{isLoading ? '...' : formatMoney(balanceDue)}</span></div>
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">
+                        Welcome back, {user ? `${user.firstName} ${user.lastName}`.trim() : 'Member'}
+                    </h2>
+                    <p className="text-white/40 text-sm mt-1">Here is your fitness summary</p>
+                </div>
+                <div className="bg-white/5 border border-white/10 px-4 py-2 flex items-center gap-3">
+                    <span className="text-[10px] uppercase font-bold text-white/40 tracking-widest">Balance Due</span>
+                    <span className="text-lg font-bold text-red-400">
+                        {isLoading ? '...' : formatMoney(balanceDue)}
+                    </span>
+                </div>
             </div>
 
-            {error && <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm">{error}</div>}
+            {error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
+                    {error}
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-4 animate-fade-in" style={{ animationDelay: '100ms' }}>
-                    <div className="flex items-center gap-2 mb-2 text-white/60"><ActivityIcon className="h-4 w-4" /><h3 className="text-sm font-bold uppercase tracking-widest">Active Memberships</h3></div>
-                    {isLoading ? <div className="bg-slate-900 border border-white/10 p-6 text-white/40">Loading memberships...</div> : !activeSubscriptions.length ? <div className="bg-slate-900 border border-white/10 p-6 text-white/40">No active memberships yet.</div> : activeSubscriptions.map(subscription => {
-                        const activity = typeof subscription.activity === 'string' ? null : subscription.activity;
-                        return (
-                            <article key={subscription._id} className="bg-slate-900 border border-white/10 p-6 group hover:border-brand/40 transition-colors">
-                                <div className="flex justify-between items-start mb-6"><h4 className="text-lg font-bold tracking-tight">{activity?.name || 'Membership'}</h4><span className="bg-brand/10 text-brand px-2 py-1 text-[10px] font-bold uppercase tracking-widest border border-brand/20">{subscription.status}</span></div>
-                                <div className="space-y-2"><div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter"><span className="text-white/60">Time Remaining</span><span className="text-white">{formatRemaining(subscription.endDate)}</span></div><div className="w-full bg-white/5 h-1 border border-white/5"><div className="bg-white/40 h-full" style={{ width: `${getProgress(subscription.startDate, subscription.endDate)}%` }}></div></div></div>
-                            </article>
-                        );
-                    })}
+                    <div className="flex items-center gap-2 mb-2 text-white/60">
+                        <ActivityIcon className="h-4 w-4" />
+                        <h3 className="text-sm font-bold uppercase tracking-widest">Active Memberships</h3>
+                    </div>
+                    
+                    {isLoading ? (
+                        <div className="bg-slate-900 border border-white/10 p-6 text-white/40">Loading memberships...</div>
+                    ) : !activeSubscriptions.length ? (
+                        <div className="bg-slate-900 border border-white/10 p-6 text-white/40">No active memberships yet.</div>
+                    ) : (
+                        activeSubscriptions.map(subscription => {
+                            const activity = typeof subscription.activity === 'string' ? null : subscription.activity;
+                            const progress = getProgress(subscription.startDate, subscription.endDate);
+                            const remaining = formatRemaining(subscription.endDate);
+                            
+                            return (
+                                <article key={subscription._id} className="bg-slate-900 border border-white/10 p-6 group hover:border-brand/40 transition-colors">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <h4 className="text-lg font-bold tracking-tight">{activity?.name || 'Membership'}</h4>
+                                        <span className="bg-brand/10 text-brand px-2 py-1 text-[10px] font-bold uppercase tracking-widest border border-brand/20">
+                                            {subscription.status}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter">
+                                            <span className="text-white/60">Time Remaining</span>
+                                            <span className="text-white">{remaining}</span>
+                                        </div>
+                                        <div className="w-full bg-white/5 h-1 border border-white/5">
+                                            <div className="bg-white/40 h-full" style={{ width: `${progress}%` }}></div>
+                                        </div>
+                                    </div>
+                                </article>
+                            );
+                        })
+                    )}
                 </div>
 
                 <div className="space-y-8 animate-fade-in" style={{ animationDelay: '200ms' }}>
                     <div>
-                        <div className="flex items-center gap-2 mb-4 text-white/60"><CreditCard className="h-4 w-4" /><h3 className="text-sm font-bold uppercase tracking-widest">Recent Payments</h3></div>
+                        <div className="flex items-center gap-2 mb-4 text-white/60">
+                            <CreditCard className="h-4 w-4" />
+                            <h3 className="text-sm font-bold uppercase tracking-widest">Recent Payments</h3>
+                        </div>
                         <div className="bg-slate-900 border border-white/10 p-4">
-                            {isLoading ? <div className="text-white/40">Loading payments...</div> : !payments.length ? <div className="text-white/40">No payments recorded yet.</div> : (
+                            {isLoading ? (
+                                <div className="text-white/40">Loading payments...</div>
+                            ) : !payments.length ? (
+                                <div className="text-white/40">No payments recorded yet.</div>
+                            ) : (
                                 <div className="space-y-4">
                                     {payments.slice(0, 4).map(payment => {
                                         const status = payment.amount >= payment.amountDue ? 'Paid in full' : `Partial (${formatMoney(payment.amountDue - payment.amount)} Debt)`;
+                                        const isPartial = status.includes('Partial');
+                                        
+                                        const subscriptionObj = typeof payment.subscription !== 'string' ? payment.subscription : null;
+                                        const activityObj = subscriptionObj && typeof subscriptionObj.activity !== 'string' ? subscriptionObj.activity : null;
+                                        const activityName = activityObj ? activityObj.name : 'Activity';
+                                        
                                         return (
                                             <div key={payment._id} className="flex items-center justify-between text-sm pb-4 border-b border-white/5 last:border-0 last:pb-0">
-                                                <div><p className="font-bold">{typeof payment.subscription === 'string' || typeof payment.subscription?.activity === 'string' ? 'Activity' : payment.subscription?.activity?.name || 'Activity'}</p><p className="text-[10px] text-white/40 font-mono mt-1">{new Date(payment.paidAt).toLocaleDateString()}</p></div>
-                                                <div className="text-right"><p className="font-bold">{formatMoney(payment.amount)}</p><p className={`text-[10px] font-bold uppercase mt-1 ${status.includes('Partial') ? 'text-red-400' : 'text-brand'}`}>{status}</p></div>
+                                                <div>
+                                                    <p className="font-bold">{activityName || 'Activity'}</p>
+                                                    <p className="text-[10px] text-white/40 font-mono mt-1">{new Date(payment.paidAt).toLocaleDateString()}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold">{formatMoney(payment.amount)}</p>
+                                                    <p className={`text-[10px] font-bold uppercase mt-1 ${isPartial ? 'text-red-400' : 'text-brand'}`}>
+                                                        {status}
+                                                    </p>
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -93,10 +179,27 @@ export const MemberDashboard = () => {
                     </div>
 
                     <div>
-                        <div className="flex items-center gap-2 mb-4 text-white/60"><Calendar className="h-4 w-4" /><h3 className="text-sm font-bold uppercase tracking-widest">My Next Session</h3></div>
+                        <div className="flex items-center gap-2 mb-4 text-white/60">
+                            <Calendar className="h-4 w-4" />
+                            <h3 className="text-sm font-bold uppercase tracking-widest">My Next Session</h3>
+                        </div>
                         <div className="bg-slate-900 border border-white/10 p-6 flex items-center justify-between group hover:border-brand/40 transition-colors">
-                            {isLoading ? <p className="text-white/40">Loading sessions...</p> : !nextSession ? <p className="text-white/40">No upcoming sessions scheduled.</p> : (
-                                <><div className="flex-1 mr-4"><h4 className="font-bold tracking-tight">{nextSession.activityName}</h4><p className="text-sm text-white/60 mt-1">{formatSessionDate(nextSession.date)} · {nextSession.startTime} - {nextSession.endTime}</p></div><div className="h-10 w-10 border border-white/10 bg-white/5 flex items-center justify-center group-hover:bg-brand group-hover:text-black transition-colors"><Calendar className="h-5 w-5" /></div></>
+                            {isLoading ? (
+                                <p className="text-white/40">Loading sessions...</p>
+                            ) : !nextSession ? (
+                                <p className="text-white/40">No upcoming sessions scheduled.</p>
+                            ) : (
+                                <>
+                                    <div className="flex-1 mr-4">
+                                        <h4 className="font-bold tracking-tight">{nextSession.activityName}</h4>
+                                        <p className="text-sm text-white/60 mt-1">
+                                            {formatSessionDate(nextSession.date)} · {nextSession.startTime} - {nextSession.endTime}
+                                        </p>
+                                    </div>
+                                    <div className="h-10 w-10 border border-white/10 bg-white/5 flex items-center justify-center group-hover:bg-brand group-hover:text-black transition-colors">
+                                        <Calendar className="h-5 w-5" />
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>

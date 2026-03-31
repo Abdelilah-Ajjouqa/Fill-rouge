@@ -9,9 +9,41 @@ import { StatCard } from '../StatCard';
 
 const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const getGymId = (g: any) => typeof g === 'string' ? g : (g?._id || '');
-const getGymName = (g: any, map: Map<string, Gym>) => typeof g !== 'string' && g?.name ? g.name : (map.get(getGymId(g))?.name || 'Unknown Gym');
-const getCoachName = (a: Activity) => typeof a.coach === 'string' ? 'Coach assigned' : (`${a.coach?.firstName || ''} ${a.coach?.lastName || ''}`.trim() || a.coach?.email || 'Coach assigned');
+const extractGymId = (gymData: any): string => {
+    if (typeof gymData === 'string') {
+        return gymData;
+    }
+    if (gymData && gymData._id) {
+        return gymData._id;
+    }
+    return '';
+};
+
+const extractGymName = (gymData: any, gymsLookupMap: Map<string, Gym>): string => {
+    if (typeof gymData !== 'string' && gymData && gymData.name) {
+        return gymData.name;
+    }
+    const gymId = extractGymId(gymData);
+    const foundGym = gymsLookupMap.get(gymId);
+    if (foundGym && foundGym.name) {
+        return foundGym.name;
+    }
+    return 'Unknown Gym';
+};
+
+const extractCoachName = (activity: Activity): string => {
+    const coach = activity.coach;
+    if (typeof coach === 'string') {
+        return 'Coach assigned';
+    }
+    if (coach && (coach.firstName || coach.lastName)) {
+        return `${coach.firstName || ''} ${coach.lastName || ''}`.trim();
+    }
+    if (coach && coach.email) {
+        return coach.email;
+    }
+    return 'Coach assigned';
+};
 
 export const SuperAdminSchedulePage = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -29,29 +61,29 @@ export const SuperAdminSchedulePage = () => {
         dispatch(fetchActivities());
     }, [dispatch, isSuperAdmin]);
 
-    const visibleActivities = useMemo(() => selectedGymId ? activities.filter(a => getGymId(a.gymId) === selectedGymId) : activities, [activities, selectedGymId]);
-    const gymsMap = useMemo(() => new Map(gyms.map(g => [g._id, g])), [gyms]);
-    const hallMap = useMemo(() => new Map(gyms.flatMap(g => (g.halls || []).filter((h: Hall) => h._id).map((h: Hall) => [h._id, { label: `${h.name} · ${h.type}`, gymName: g.name }]))), [gyms]);
+    const visibleActivities = useMemo(() => selectedGymId ? activities.filter(activity => extractGymId(activity.gymId) === selectedGymId) : activities, [activities, selectedGymId]);
+    const gymsMap = useMemo(() => new Map(gyms.map(gym => [gym._id, gym])), [gyms]);
+    const hallMap = useMemo(() => new Map(gyms.flatMap(gym => (gym.halls || []).filter((hall: Hall) => hall._id).map((hall: Hall) => [hall._id, { label: `${hall.name} · ${hall.type}`, gymName: gym.name }]))), [gyms]);
 
-    const sessions = useMemo(() => visibleActivities.flatMap((a) => {
-        if (!a.schedule?.length) return [];
-        const gymName = getGymName(a.gymId, gymsMap), coachName = getCoachName(a), hallLabel = hallMap.get(a.hallId as string)?.label || 'Hall unassigned';
-        return a.schedule.map((s, i) => ({ id: `${a._id}-${i}`, day: s.day, startTime: s.startTime, endTime: s.endTime, activityName: a.name, coachName, gymName, hallLabel }));
-    }).sort((a, b) => {
-        const da = DAY_ORDER.indexOf(a.day), db = DAY_ORDER.indexOf(b.day);
-        const sa = da === -1 ? 7 : da, sb = db === -1 ? 7 : db;
-        return sa !== sb ? sa - sb : a.startTime.localeCompare(b.startTime);
+    const sessions = useMemo(() => visibleActivities.flatMap((activity) => {
+        if (!activity.schedule?.length) return [];
+        const gymName = extractGymName(activity.gymId, gymsMap), coachName = extractCoachName(activity), hallLabel = hallMap.get(activity.hallId as string)?.label || 'Hall unassigned';
+        return activity.schedule.map((schedule, index) => ({ id: `${activity._id}-${index}`, day: schedule.day, startTime: schedule.startTime, endTime: schedule.endTime, activityName: activity.name, coachName, gymName, hallLabel }));
+    }).sort((activityA, activityB) => {
+        const dayA = DAY_ORDER.indexOf(activityA.day), dayB = DAY_ORDER.indexOf(activityB.day);
+        const dayWeightA = dayA === -1 ? 7 : dayA, dayWeightB = dayB === -1 ? 7 : dayB;
+        return dayWeightA !== dayWeightB ? dayWeightA - dayWeightB : activityA.startTime.localeCompare(activityB.startTime);
     }), [visibleActivities, gymsMap, hallMap]);
 
-    const unscheduledActivities = visibleActivities.filter(a => !a.schedule?.length);
+    const unscheduledActivities = visibleActivities.filter(activity => !activity.schedule?.length);
 
     if (!isSuperAdmin) return <div className="p-8"><div className="bg-slate-900 border border-white/10 p-6"><h2 className="text-lg font-bold">Schedule</h2><p className="text-white/40 text-sm mt-2">Super Admins only.</p></div></div>;
 
     const cards = [
-        { t: 'Total Sessions', v: sessions.length, i: <Calendar className="h-5 w-5" />, s: 'Across the week' },
-        { t: 'Activities', v: visibleActivities.length, i: <Clock className="h-5 w-5" />, s: 'Active classes' },
-        { t: 'Unscheduled', v: unscheduledActivities.length, i: <AlertTriangle className="h-5 w-5" />, s: 'Need timetable' },
-        { t: 'Gyms', v: gyms.length, i: <MapPin className="h-5 w-5" />, s: 'Facilities tracked' }
+        { title: 'Total Sessions', value: sessions.length, icon: <Calendar className="h-5 w-5" />, subtitle: 'Across the week' },
+        { title: 'Activities', value: visibleActivities.length, icon: <Clock className="h-5 w-5" />, subtitle: 'Active classes' },
+        { title: 'Unscheduled', value: unscheduledActivities.length, icon: <AlertTriangle className="h-5 w-5" />, subtitle: 'Need timetable' },
+        { title: 'Gyms', value: gyms.length, icon: <MapPin className="h-5 w-5" />, subtitle: 'Facilities tracked' }
     ];
 
     return (
@@ -60,8 +92,8 @@ export const SuperAdminSchedulePage = () => {
                 <div><h2 className="text-2xl font-bold tracking-tight">Global Schedule</h2><p className="text-white/40 text-sm mt-1">Monitor activities across all gyms.</p></div>
                 <div className="flex items-center gap-3">
                     <label className="text-[10px] uppercase tracking-widest text-white/40">Filter by gym</label>
-                    <select value={selectedGymId} onChange={e => setSelectedGymId(e.target.value)} className="bg-slate-950 border border-white/10 p-2 text-xs text-white focus:outline-none focus:border-brand">
-                        <option value="">All gyms</option>{gyms.map(g => <option key={g._id} value={g._id}>{g.name}</option>)}
+                    <select value={selectedGymId} onChange={event => setSelectedGymId(event.target.value)} className="bg-slate-950 border border-white/10 p-2 text-xs text-white focus:outline-none focus:border-brand">
+                        <option value="">All gyms</option>{gyms.map(gym => <option key={gym._id} value={gym._id}>{gym.name}</option>)}
                     </select>
                 </div>
             </div>
@@ -69,7 +101,7 @@ export const SuperAdminSchedulePage = () => {
             {error && <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 text-sm">{error}</div>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {cards.map((c, idx) => <StatCard key={c.t} title={c.t} value={isLoading ? '...' : c.v} icon={c.i} subtitle={c.s} delay={(idx + 1) * 100} />)}
+                {cards.map((card, index) => <StatCard key={card.title} title={card.title} value={isLoading ? '...' : card.value} icon={card.icon} subtitle={card.subtitle} delay={(index + 1) * 100} />)}
             </div>
 
             <div className="bg-slate-900 border border-white/10 p-6">
@@ -82,14 +114,14 @@ export const SuperAdminSchedulePage = () => {
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
                             <thead className="bg-white/5 text-white/40 text-[10px] uppercase font-bold tracking-widest">
-                                <tr>{['Day', 'Time', 'Activity', 'Gym', 'Coach', 'Hall'].map(h => <th key={h} className="p-4">{h}</th>)}</tr>
+                                <tr>{['Day', 'Time', 'Activity', 'Gym', 'Coach', 'Hall'].map(header => <th key={header} className="p-4">{header}</th>)}</tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
-                                {sessions.map(s => (
-                                    <tr key={s.id} className="hover:bg-white/2 transition-colors">
-                                        <td className="p-4 font-medium">{s.day}</td><td className="p-4 font-mono text-white/60">{s.startTime} - {s.endTime}</td>
-                                        <td className="p-4 text-white/80">{s.activityName}</td><td className="p-4 text-white/60">{s.gymName}</td>
-                                        <td className="p-4 text-white/60">{s.coachName}</td><td className="p-4 text-white/60">{s.hallLabel}</td>
+                                {sessions.map(session => (
+                                    <tr key={session.id} className="hover:bg-white/2 transition-colors">
+                                        <td className="p-4 font-medium">{session.day}</td><td className="p-4 font-mono text-white/60">{session.startTime} - {session.endTime}</td>
+                                        <td className="p-4 text-white/80">{session.activityName}</td><td className="p-4 text-white/60">{session.gymName}</td>
+                                        <td className="p-4 text-white/60">{session.coachName}</td><td className="p-4 text-white/60">{session.hallLabel}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -102,11 +134,11 @@ export const SuperAdminSchedulePage = () => {
                 <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-bold">Unscheduled Activities</h3><span className="text-[10px] uppercase tracking-widest text-white/40">{unscheduledActivities.length} items</span></div>
                 {unscheduledActivities.length === 0 ? <div className="p-6 border border-dashed border-white/10 text-white/40 text-sm">All activities have schedules assigned.</div> : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {unscheduledActivities.map(a => (
-                            <div key={a._id} className="bg-slate-950/60 border border-white/5 p-4">
-                                <p className="text-sm font-semibold text-white">{a.name}</p>
-                                <p className="text-xs text-white/40 mt-1">Gym: {getGymName(a.gymId, gymsMap)}</p>
-                                <p className="text-xs text-white/40">Coach: {getCoachName(a)}</p>
+                        {unscheduledActivities.map(activity => (
+                            <div key={activity._id} className="bg-slate-950/60 border border-white/5 p-4">
+                                <p className="text-sm font-semibold text-white">{activity.name}</p>
+                                <p className="text-xs text-white/40 mt-1">Gym: {extractGymName(activity.gymId, gymsMap)}</p>
+                                <p className="text-xs text-white/40">Coach: {extractCoachName(activity)}</p>
                             </div>
                         ))}
                     </div>

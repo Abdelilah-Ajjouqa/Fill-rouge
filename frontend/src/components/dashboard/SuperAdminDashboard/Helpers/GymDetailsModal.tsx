@@ -12,30 +12,30 @@ import { MemberCreateModal, type MemberFormState } from '../../modals/MemberCrea
 import { GymAdminEditModal } from './GymAdminEditModal';
 import type { GymAdminEditFormState } from '../../../../types/super-admin';
 
-const formatDate = (v?: string) => v && !Number.isNaN(new Date(v).getTime()) ? new Date(v).toLocaleDateString() : 'N/A';
+const formatDate = (dateString?: string) => dateString && !Number.isNaN(new Date(dateString).getTime()) ? new Date(dateString).toLocaleDateString() : 'N/A';
 const initCoach = { firstName: '', lastName: '', email: '', password: '' };
 const initMember = { firstName: '', lastName: '', email: '', password: '', phone: '', dateOfBirth: '' };
 
 export const GymDetailsModal = ({ gym, isOpen, onClose }: { gym: Gym | null; isOpen: boolean; onClose: () => void; }) => {
     const dispatch = useDispatch<AppDispatch>();
-    const { users, isLoading: usersLoading, error: usersError } = useSelector((s: RootState) => s.users);
-    const { members, isLoading: membersLoading, error: membersError } = useSelector((s: RootState) => s.members);
+    const { users, isLoading: usersLoading, error: usersError } = useSelector((state: RootState) => state.users);
+    const { members, isLoading: membersLoading, error: membersError } = useSelector((state: RootState) => state.members);
     
-    const [cModal, setCModal] = useState(false);
-    const [cForm, setCForm] = useState<CoachFormState>(initCoach);
-    const [cErr, setCErr] = useState<string | null>(null);
-    const [cSubmitting, setCSubmitting] = useState(false);
+    const [coachModalOpen, setCoachModalOpen] = useState(false);
+    const [coachForm, setCoachForm] = useState<CoachFormState>(initCoach);
+    const [coachError, setCoachError] = useState<string | null>(null);
+    const [isCoachSubmitting, setIsCoachSubmitting] = useState(false);
     
-    const [mModal, setMModal] = useState(false);
-    const [mForm, setMForm] = useState<MemberFormState>(initMember);
-    const [mErr, setMErr] = useState<string | null>(null);
-    const [mSubmitting, setMSubmitting] = useState(false);
+    const [memberModalOpen, setMemberModalOpen] = useState(false);
+    const [memberForm, setMemberForm] = useState<MemberFormState>(initMember);
+    const [memberError, setMemberError] = useState<string | null>(null);
+    const [isMemberSubmitting, setIsMemberSubmitting] = useState(false);
 
-    const [eModal, setEModal] = useState(false);
-    const [eTarget, setETarget] = useState<string | null>(null);
-    const [eForm, setEForm] = useState<GymAdminEditFormState>({ firstName: '', lastName: '', email: '', password: '' });
-    const [eErr, setEErr] = useState<string | null>(null);
-    const [eSubmitting, setESubmitting] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [editTarget, setEditTarget] = useState<string | null>(null);
+    const [editForm, setEditForm] = useState<GymAdminEditFormState>({ firstName: '', lastName: '', email: '', password: '' });
+    const [editError, setEditError] = useState<string | null>(null);
+    const [isEditSubmitting, setIsEditSubmitting] = useState(false);
 
     const isLoading = usersLoading || membersLoading;
     const error = usersError || membersError;
@@ -45,53 +45,53 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: { gym: Gym | null; isO
         dispatch(fetchUsers()); dispatch(fetchMembersByGym(gym._id));
     }, [dispatch, gym, isOpen]);
 
-    const staff = useMemo(() => gym ? users.filter(u => u.gymId === gym._id && ['ADMIN', 'COACH'].includes(u.role || '')) : [], [gym, users]);
-    const gymMembers = useMemo(() => gym ? members.filter(m => m.gymId === gym._id) : [], [gym, members]);
+    const staff = useMemo(() => gym ? users.filter(user => user.gymId === gym._id && ['ADMIN', 'COACH'].includes(user.role || '')) : [], [gym, users]);
+    const gymMembers = useMemo(() => gym ? members.filter(member => member.gymId === gym._id) : [], [gym, members]);
 
-    const closeCoach = () => { setCModal(false); setCErr(null); setCForm(initCoach); };
-    const closeMember = () => { setMModal(false); setMErr(null); setMForm(initMember); };
-    const closeEdit = () => { setEModal(false); setETarget(null); setEForm({ firstName: '', lastName: '', email: '', password: '' }); };
+    const closeCoach = () => { setCoachModalOpen(false); setCoachError(null); setCoachForm(initCoach); };
+    const closeMember = () => { setMemberModalOpen(false); setMemberError(null); setMemberForm(initMember); };
+    const closeEdit = () => { setEditModalOpen(false); setEditTarget(null); setEditForm({ firstName: '', lastName: '', email: '', password: '' }); };
 
-    const openEdit = (user: any) => { setETarget(user._id); setEForm({ firstName: user.firstName, lastName: user.lastName, email: user.email, password: '' }); setEErr(null); setEModal(true); };
+    const openEdit = (user: any) => { setEditTarget(user._id); setEditForm({ firstName: user.firstName, lastName: user.lastName, email: user.email, password: '' }); setEditError(null); setEditModalOpen(true); };
 
-    const handleCoachSubmit = async (e: FormEvent) => {
-        e.preventDefault(); if (!gym) return;
-        if (!cForm.firstName.trim() || !cForm.lastName.trim() || !cForm.email.trim() || !cForm.password.trim()) return setCErr('Please fill all required fields.');
+    const handleCoachSubmit = async (event: FormEvent) => {
+        event.preventDefault(); if (!gym) return;
+        if (!coachForm.firstName.trim() || !coachForm.lastName.trim() || !coachForm.email.trim() || !coachForm.password.trim()) return setCoachError('Please fill all required fields.');
         
-        setCErr(null); setCSubmitting(true);
+        setCoachError(null); setIsCoachSubmitting(true);
         try {
-            await dispatch(createUser({ firstName: cForm.firstName.trim(), lastName: cForm.lastName.trim(), email: cForm.email.trim(), password: cForm.password, role: 'COACH', gymId: gym._id })).unwrap();
+            await dispatch(createUser({ firstName: coachForm.firstName.trim(), lastName: coachForm.lastName.trim(), email: coachForm.email.trim(), password: coachForm.password, role: 'COACH', gymId: gym._id })).unwrap();
             toast.success('Coach created successfully.'); closeCoach();
-        } catch (err: any) { setCErr(typeof err === 'string' ? err : 'Failed to create coach.'); }
-        finally { setCSubmitting(false); }
+        } catch (error: any) { setCoachError(typeof error === 'string' ? error : 'Failed to create coach.'); }
+        finally { setIsCoachSubmitting(false); }
     };
 
-    const handleMemberSubmit = async (e: FormEvent) => {
-        e.preventDefault(); if (!gym) return;
-        if (!mForm.firstName.trim() || !mForm.lastName.trim() || !mForm.email.trim() || !mForm.password.trim()) return setMErr('Please fill all required fields.');
+    const handleMemberSubmit = async (event: FormEvent) => {
+        event.preventDefault(); if (!gym) return;
+        if (!memberForm.firstName.trim() || !memberForm.lastName.trim() || !memberForm.email.trim() || !memberForm.password.trim()) return setMemberError('Please fill all required fields.');
         
-        setMErr(null); setMSubmitting(true);
+        setMemberError(null); setIsMemberSubmitting(true);
         try {
-            const payload: MemberInput = { firstName: mForm.firstName.trim(), lastName: mForm.lastName.trim(), email: mForm.email.trim(), password: mForm.password, gymId: gym._id };
-            if (mForm.phone.trim()) payload.phone = mForm.phone.trim();
-            if (mForm.dateOfBirth) payload.dateOfBirth = mForm.dateOfBirth;
+            const payload: MemberInput = { firstName: memberForm.firstName.trim(), lastName: memberForm.lastName.trim(), email: memberForm.email.trim(), password: memberForm.password, gymId: gym._id };
+            if (memberForm.phone.trim()) payload.phone = memberForm.phone.trim();
+            if (memberForm.dateOfBirth) payload.dateOfBirth = memberForm.dateOfBirth;
             
             await dispatch(createMember(payload)).unwrap();
             toast.success('Member created successfully.'); closeMember();
-        } catch (err: any) { setMErr(typeof err === 'string' ? err : 'Failed to create member.'); }
-        finally { setMSubmitting(false); }
+        } catch (error: any) { setMemberError(typeof error === 'string' ? error : 'Failed to create member.'); }
+        finally { setIsMemberSubmitting(false); }
     };
 
-    const handleEditSubmit = async (e: FormEvent) => {
-        e.preventDefault(); if (!eTarget) return;
-        setEErr(null); setESubmitting(true);
+    const handleEditSubmit = async (event: FormEvent) => {
+        event.preventDefault(); if (!editTarget) return;
+        setEditError(null); setIsEditSubmitting(true);
         try {
-            const payload: any = { firstName: eForm.firstName.trim(), lastName: eForm.lastName.trim(), email: eForm.email.trim() };
-            if (eForm.password.trim()) payload.password = eForm.password;
-            await dispatch(updateUser({ id: eTarget, data: payload })).unwrap();
+            const payload: any = { firstName: editForm.firstName.trim(), lastName: editForm.lastName.trim(), email: editForm.email.trim() };
+            if (editForm.password.trim()) payload.password = editForm.password;
+            await dispatch(updateUser({ id: editTarget, data: payload })).unwrap();
             toast.success('Staff updated successfully.'); closeEdit();
-        } catch (err: any) { setEErr(typeof err === 'string' ? err : 'Failed to update user.'); }
-        finally { setESubmitting(false); }
+        } catch (error: any) { setEditError(typeof error === 'string' ? error : 'Failed to update user.'); }
+        finally { setIsEditSubmitting(false); }
     };
 
     const handleDeleteStaff = async (userId: string) => {
@@ -99,16 +99,16 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: { gym: Gym | null; isO
         try {
             await dispatch(deleteUser(userId)).unwrap();
             toast.success('Staff member removed.');
-        } catch (err: any) { toast.error(typeof err === 'string' ? err : 'Failed to remove staff.'); }
+        } catch (error: any) { toast.error(typeof error === 'string' ? error : 'Failed to remove staff.'); }
     };
 
     if (!isOpen || !gym) return null;
 
-    const admins = staff.filter(u => u.role === 'ADMIN').length;
-    const coaches = staff.filter(u => u.role === 'COACH').length;
-    const mPreview = gymMembers.slice(0, 6);
+    const admins = staff.filter(user => user.role === 'ADMIN').length;
+    const coaches = staff.filter(user => user.role === 'COACH').length;
+    const memberPreview = gymMembers.slice(0, 6);
     const hallCount = gym.halls?.length || 0;
-    const hPreview = gym.halls?.slice(0, 6) || [];
+    const hallPreview = gym.halls?.slice(0, 6) || [];
 
     const Empty = ({ msg }: { msg: string }) => <div className="p-4 border border-dashed border-white/10 text-white/40 text-sm">{msg}</div>;
     const SectionHeader = ({ title, action, onAction }: any) => (
@@ -136,8 +136,8 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: { gym: Gym | null; isO
                             <div className="bg-slate-950/60 border border-white/5 p-4 text-sm">
                                 <p className="text-[10px] uppercase tracking-widest text-white/40 mb-3">Basic info</p>
                                 <div className="space-y-2">
-                                    {[['Address', gym.address], ['Phone', gym.phone], ['Status', <span key="status" className={gym.isActive ? 'text-brand' : 'text-red-400'}>{gym.isActive ? 'Active' : 'Suspended'}</span>], ['Created', formatDate(gym.createdAt)]].map(([l, v], i) => (
-                                        <div key={i}><span className="text-white/40 mr-2">{l as string}</span><p className="text-white/90 inline">{v as React.ReactNode}</p></div>
+                                    {[['Address', gym.address], ['Phone', gym.phone], ['Status', <span key="status" className={gym.isActive ? 'text-brand' : 'text-red-400'}>{gym.isActive ? 'Active' : 'Suspended'}</span>], ['Created', formatDate(gym.createdAt)]].map(([label, value], index) => (
+                                        <div key={index}><span className="text-white/40 mr-2">{label as string}</span><p className="text-white/90 inline">{value as React.ReactNode}</p></div>
                                     ))}
                                 </div>
                             </div>
@@ -150,18 +150,18 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: { gym: Gym | null; isO
 
                         <div className="lg:col-span-2 space-y-6">
                             <div>
-                                <SectionHeader title="Staff" action="Add Coach" onAction={() => { setCErr(null); setCModal(true); }} />
+                                <SectionHeader title="Staff" action="Add Coach" onAction={() => { setCoachError(null); setCoachModalOpen(true); }} />
                                 {!staff.length ? <Empty msg="No staff assigned yet." /> : (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {staff.map(u => (
-                                            <div key={u._id} className="bg-slate-950/60 border border-white/5 p-4 flex justify-between items-start group">
+                                        {staff.map(user => (
+                                            <div key={user._id} className="bg-slate-950/60 border border-white/5 p-4 flex justify-between items-start group">
                                                 <div>
-                                                    <p className="text-sm font-semibold text-white">{u.firstName} {u.lastName}</p>
-                                                    <p className="text-xs text-white/40 mt-1">{u.email}</p><p className="text-[10px] uppercase tracking-widest text-brand mt-3">{u.role}</p>
+                                                    <p className="text-sm font-semibold text-white">{user.firstName} {user.lastName}</p>
+                                                    <p className="text-xs text-white/40 mt-1">{user.email}</p><p className="text-[10px] uppercase tracking-widest text-brand mt-3">{user.role}</p>
                                                 </div>
                                                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => openEdit(u)} className="p-1 text-white/40 hover:text-brand transition-colors"><Edit2 className="h-4 w-4" /></button>
-                                                    <button onClick={() => handleDeleteStaff(u._id)} className="p-1 text-white/40 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                                                    <button onClick={() => openEdit(user)} className="p-1 text-white/40 hover:text-brand transition-colors"><Edit2 className="h-4 w-4" /></button>
+                                                    <button onClick={() => handleDeleteStaff(user._id)} className="p-1 text-white/40 hover:text-red-400 transition-colors"><Trash2 className="h-4 w-4" /></button>
                                                 </div>
                                             </div>
                                         ))}
@@ -170,16 +170,16 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: { gym: Gym | null; isO
                             </div>
                             
                             <div>
-                                <SectionHeader title="Members" action="Add Member" onAction={() => { setMErr(null); setMModal(true); }} />
+                                <SectionHeader title="Members" action="Add Member" onAction={() => { setMemberError(null); setMemberModalOpen(true); }} />
                                 {!gymMembers.length ? <Empty msg="No members found yet." /> : (
                                     <div className="space-y-2">
-                                        {mPreview.map(m => (
-                                            <div key={m._id} className="flex items-center justify-between bg-slate-950/60 border border-white/5 p-3">
-                                                <div><p className="text-sm text-white">{m.firstName} {m.lastName}</p><p className="text-xs text-white/40">{m.email}</p></div>
-                                                <span className="text-[10px] uppercase tracking-widest text-white/40">{m.phone || 'No phone'}</span>
+                                        {memberPreview.map(member => (
+                                            <div key={member._id} className="flex items-center justify-between bg-slate-950/60 border border-white/5 p-3">
+                                                <div><p className="text-sm text-white">{member.firstName} {member.lastName}</p><p className="text-xs text-white/40">{member.email}</p></div>
+                                                <span className="text-[10px] uppercase tracking-widest text-white/40">{member.phone || 'No phone'}</span>
                                             </div>
                                         ))}
-                                        {gymMembers.length > mPreview.length && <p className="text-xs text-white/40">+{gymMembers.length - mPreview.length} more members</p>}
+                                        {gymMembers.length > memberPreview.length && <p className="text-xs text-white/40">+{gymMembers.length - memberPreview.length} more members</p>}
                                     </div>
                                 )}
                             </div>
@@ -188,13 +188,13 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: { gym: Gym | null; isO
                                 <SectionHeader title="Halls" />
                                 {!hallCount ? <Empty msg="No halls configured yet." /> : (
                                     <div className="space-y-2">
-                                        {hPreview.map(h => (
-                                            <div key={h._id || h.name} className="flex items-center justify-between bg-slate-950/60 border border-white/5 p-3">
-                                                <div><p className="text-sm text-white">{h.name}</p><p className="text-xs text-white/40">{h.type}</p></div>
-                                                <span className="text-[10px] uppercase tracking-widest text-white/40">{h.capacity} seats</span>
+                                        {hallPreview.map(hall => (
+                                            <div key={hall._id || hall.name} className="flex items-center justify-between bg-slate-950/60 border border-white/5 p-3">
+                                                <div><p className="text-sm text-white">{hall.name}</p><p className="text-xs text-white/40">{hall.type}</p></div>
+                                                <span className="text-[10px] uppercase tracking-widest text-white/40">{hall.capacity} seats</span>
                                             </div>
                                         ))}
-                                        {hallCount > hPreview.length && <p className="text-xs text-white/40">+{hallCount - hPreview.length} more halls</p>}
+                                        {hallCount > hallPreview.length && <p className="text-xs text-white/40">+{hallCount - hallPreview.length} more halls</p>}
                                     </div>
                                 )}
                             </div>
@@ -203,9 +203,9 @@ export const GymDetailsModal = ({ gym, isOpen, onClose }: { gym: Gym | null; isO
                 )}
             </div>
 
-            <CoachCreateModal isOpen={cModal} values={cForm} error={cErr} isSubmitting={cSubmitting} onChange={(f) => (e) => setCForm(p => ({ ...p, [f]: e.target.value }))} onClose={closeCoach} onSubmit={handleCoachSubmit} />
-            <MemberCreateModal isOpen={mModal} values={mForm} error={mErr} isSubmitting={mSubmitting} onChange={(f) => (e) => setMForm(p => ({ ...p, [f]: e.target.value }))} onClose={closeMember} onSubmit={handleMemberSubmit} />
-            <GymAdminEditModal isOpen={eModal} values={eForm} error={eErr} isSubmitting={eSubmitting} onChange={(f) => (e) => setEForm(p => ({ ...p, [f]: e.target.value }))} onClose={closeEdit} onSubmit={handleEditSubmit} />
+            <CoachCreateModal isOpen={coachModalOpen} values={coachForm} error={coachError} isSubmitting={isCoachSubmitting} onChange={(field) => (event) => setCoachForm(prev => ({ ...prev, [field]: event.target.value }))} onClose={closeCoach} onSubmit={handleCoachSubmit} />
+            <MemberCreateModal isOpen={memberModalOpen} values={memberForm} error={memberError} isSubmitting={isMemberSubmitting} onChange={(field) => (event) => setMemberForm(prev => ({ ...prev, [field]: event.target.value }))} onClose={closeMember} onSubmit={handleMemberSubmit} />
+            <GymAdminEditModal isOpen={editModalOpen} values={editForm} error={editError} isSubmitting={isEditSubmitting} onChange={(field) => (event) => setEditForm(prev => ({ ...prev, [field]: event.target.value }))} onClose={closeEdit} onSubmit={handleEditSubmit} />
         </div>
     );
 };
