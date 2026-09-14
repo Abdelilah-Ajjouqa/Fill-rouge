@@ -125,6 +125,19 @@ export class MembersService {
     return updatedMember;
   }
 
+  async updateProfile(id: string, updateData: any) {
+    const updatedMember = await this.memberModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .select('-passwordHash')
+      .exec();
+
+    if (!updatedMember) {
+      throw new NotFoundException(`Member with ID "${id}" not found`);
+    }
+
+    return updatedMember;
+  }
+
   async remove(id: string, gymId: string) {
     const deletedMember = await this.memberModel
       .findOneAndDelete({ _id: id, gymId })

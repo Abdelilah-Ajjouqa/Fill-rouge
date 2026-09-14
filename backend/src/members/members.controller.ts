@@ -47,7 +47,10 @@ export class MembersController {
       return this.membersService.findAll(gymId);
     }
 
-    // Admin and coach both see all members in their gym.
+    if (req.user.role === UserRole.COACH) {
+      return this.membersService.findByCoach(req.user.userId, req.user.gymId);
+    }
+
     return this.membersService.findAll(req.user.gymId);
   }
 

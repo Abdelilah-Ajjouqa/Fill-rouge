@@ -104,6 +104,19 @@ export class UsersService {
     return updatedUser;
   }
 
+  async updateProfile(id: string, updateData: any): Promise<User> {
+    const updatedUser = await this.userModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .select('-passwordHash')
+      .exec();
+
+    if (!updatedUser) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+
+    return updatedUser;
+  }
+
   async remove(id: string): Promise<User> {
     const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
     if (!deletedUser) {

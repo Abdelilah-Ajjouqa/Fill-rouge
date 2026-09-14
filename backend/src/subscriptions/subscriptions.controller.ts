@@ -92,4 +92,15 @@ export class SubscriptionsController {
       req.user.gymId,
     );
   }
+
+  @Post(':id/renew')
+  @Roles(UserRole.ADMIN, UserRole.COACH)
+  @ApiOperation({
+    summary: 'Renew an expired or active subscription by 1 month',
+  })
+  renew(@Request() req: any, @Param('id') id: string) {
+    const gymId =
+      req.user.role === UserRole.SUPER_ADMIN ? undefined : req.user.gymId;
+    return this.subscriptionsService.renew(id, gymId);
+  }
 }

@@ -21,8 +21,8 @@ export class Member {
   @Prop({ required: true })
   passwordHash: string;
 
-  @Prop()
-  phone?: number;
+  @Prop({ type: String })
+  phone?: string;
 
   @Prop()
   dateOfBirth?: Date;

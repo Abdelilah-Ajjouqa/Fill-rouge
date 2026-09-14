@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import {
@@ -160,5 +161,51 @@ export class SubscriptionsService {
 
     if (!subscription) throw new NotFoundException('Subscription not found');
     return subscription;
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async handleExpiredSubscriptions() {
+    const now = new Date();
+    const result = await this.subscriptionModel.updateMany(
+      {
+        status: SubscriptionStatus.ACTIVE,
+        endDate: { $lt: now },
+      },
+      {
+        $set: { status: SubscriptionStatus.EXPIRED },
+      },
+    );
+    if (result.modifiedCount > 0) {
+      console.log(
+        `[SubscriptionCron] Expired ${result.modifiedCount} subscription(s).`,
+      );
+    }
+  }
+
+  async renew(id: string, gymId?: string): Promise<Subscription> {
+    const query: any = { _id: new Types.ObjectId(id) };
+    if (gymId) {
+      query.gymId = new Types.ObjectId(gymId);
+    }
+
+    const subscription = await this.subscriptionModel.findOne(query).exec();
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    const now = new Date();
+    const currentEnd = subscription.endDate
+      ? new Date(subscription.endDate)
+      : now;
+    const baseDate = currentEnd > now ? currentEnd : now;
+    const newEndDate = new Date(baseDate);
+    newEndDate.setMonth(newEndDate.getMonth() + 1);
+
+    subscription.endDate = newEndDate;
+    subscription.status = SubscriptionStatus.ACTIVE;
+    await subscription.save();
+
+    const targetGymId = (subscription.gymId as any)?.toString() || gymId || '';
+    return this.findOne(id, targetGymId);
   }
 }
