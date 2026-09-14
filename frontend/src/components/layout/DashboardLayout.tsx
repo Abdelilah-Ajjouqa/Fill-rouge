@@ -81,15 +81,27 @@ export const DashboardLayout = () => {
                 </nav>
 
                 <div className="p-4 border-t border-white/10">
-                    <div className="flex items-center gap-3 p-2 mb-2">
-                        <div className="h-8 w-8 bg-white/10 flex items-center justify-center border border-white/20 shrink-0">
-                            <User className="h-4 w-4 text-white/60" />
+                    <Link
+                        to="/dashboard/profile"
+                        className="flex items-center gap-3 p-2 mb-2 rounded hover:bg-white/5 transition-colors group cursor-pointer"
+                        title="View & Edit Profile"
+                    >
+                        <div className="h-8 w-8 rounded-full overflow-hidden bg-white/10 flex items-center justify-center border border-white/20 shrink-0 group-hover:border-brand transition-colors">
+                            {user?.photo ? (
+                                <img
+                                    src={user.photo.startsWith('http') ? user.photo : `http://localhost:3000${user.photo}`}
+                                    alt={profileName}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <User className="h-4 w-4 text-white/60 group-hover:text-brand transition-colors" />
+                            )}
                         </div>
                         <div className="hidden lg:block overflow-hidden">
-                            <p className="text-xs font-bold truncate">{profileName}</p>
+                            <p className="text-xs font-bold truncate group-hover:text-brand transition-colors">{profileName}</p>
                             <p className="text-[10px] text-white/40 uppercase truncate">{profileRole}</p>
                         </div>
-                    </div>
+                    </Link>
                     
                     <button 
                         onClick={handleLogout}

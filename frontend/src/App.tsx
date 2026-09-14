@@ -12,6 +12,7 @@ import { SchedulePage } from './components/dashboard/AdminDashboard/SchedulePage
 import { CoachSchedulePage } from './components/dashboard/Coach/CoachSchedulePage'
 import { SuperAdminAnalyticsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminAnalyticsPage'
 import { SuperAdminSettingsPage } from './components/dashboard/SuperAdminDashboard/SuperAdminSettingsPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { Toaster } from 'sonner'
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
             <Route path="/dashboard/schedules" element={<CoachSchedulePage />} />
             <Route path="/dashboard/analytics" element={<SuperAdminAnalyticsPage />} />
             <Route path="/dashboard/settings" element={<SuperAdminSettingsPage />} />
+            <Route path="/dashboard/profile" element={<ProfilePage />} />
           </Route>
 
         </Route>

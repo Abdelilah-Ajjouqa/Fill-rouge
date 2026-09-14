@@ -53,6 +53,29 @@ export const fetchProfile = createAsyncThunk<User, void, { rejectValue: string }
   }
 );
 
+// Thunk to update user's profile and avatar
+export const updateProfile = createAsyncThunk<
+  User,
+  FormData,
+  { rejectValue: string }
+>('auth/updateProfile', async (formData, { rejectWithValue }) => {
+  try {
+    const response = await api.patch<User>('/auth/me', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to update profile',
+      );
+    }
+    return rejectWithValue('Failed to update profile');
+  }
+});
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -96,6 +119,20 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.error = action.payload as string;
       state.isAuthenticated = false;
+    });
+
+    // Update Profile flow
+    builder.addCase(updateProfile.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    });
+    builder.addCase(updateProfile.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.user = action.payload;
+    });
+    builder.addCase(updateProfile.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string;
     });
   },
 });

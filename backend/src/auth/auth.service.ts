@@ -67,4 +67,34 @@ export class AuthService {
 
     return this.usersService.findOne(userId);
   }
+
+  async updateProfile(
+    userId: string,
+    role: string,
+    dto: any,
+    avatarFile?: Express.Multer.File,
+  ) {
+    const updatePayload: any = {};
+    if (dto.firstName) updatePayload.firstName = dto.firstName;
+    if (dto.lastName) updatePayload.lastName = dto.lastName;
+    if (dto.phone !== undefined) updatePayload.phone = dto.phone;
+    if (dto.password) {
+      updatePayload.passwordHash = await bcrypt.hash(dto.password, 10);
+    }
+    if (avatarFile) {
+      updatePayload.photo = `/uploads/avatars/${avatarFile.filename}`;
+    } else if (dto.photo) {
+      updatePayload.photo = dto.photo;
+    }
+
+    if (role === (UserRole.MEMBER as string)) {
+      const updatedMember = await this.membersService.updateProfile(
+        userId,
+        updatePayload,
+      );
+      return { ...updatedMember.toObject(), role: UserRole.MEMBER };
+    }
+
+    return this.usersService.updateProfile(userId, updatePayload);
+  }
 }

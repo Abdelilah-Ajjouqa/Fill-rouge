@@ -8,6 +8,8 @@ export interface User {
   role: UserRole;
   gymId: string | null;
   isActive?: boolean;
+  phone?: string;
+  photo?: string;
 }
 
 export interface AuthResponse {
