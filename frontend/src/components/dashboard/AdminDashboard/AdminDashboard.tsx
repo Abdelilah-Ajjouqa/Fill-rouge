@@ -1,10 +1,35 @@
+import { useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { DollarSign, Users, Award, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import type { AppDispatch, RootState } from '../../../store/store';
+import { renewSubscription, fetchSubscriptions, fetchSubscriptionsByGym } from '../../../store/slices/subscriptionsSlice';
 import { StatCard } from '../StatCard';
 import { useAdminDashboard } from '../hooks/useAdminDashboard';
 
 export const AdminDashboard = () => {
+    const dispatch = useDispatch<AppDispatch>();
+    const gymId = useSelector((state: RootState) => state.auth.user?.gymId);
     const { data, isLoading, error } = useAdminDashboard();
     const expiredMembers = data?.expiredMembers ?? [];
+    const [renewingId, setRenewingId] = useState<string | null>(null);
+
+    const handleRenew = async (subscriptionId: string) => {
+        setRenewingId(subscriptionId);
+        try {
+            await dispatch(renewSubscription(subscriptionId)).unwrap();
+            toast.success('Subscription renewed for 1 month!');
+            if (gymId) {
+                dispatch(fetchSubscriptionsByGym(gymId));
+            } else {
+                dispatch(fetchSubscriptions());
+            }
+        } catch (err: any) {
+            toast.error(typeof err === 'string' ? err : 'Failed to renew subscription');
+        } finally {
+            setRenewingId(null);
+        }
+    };
 
     const stats = [
         { t: "Monthly Revenue", v: isLoading ? '...' : `${(data?.monthlyRevenue ?? 0).toLocaleString()} DH`, i: <DollarSign className="h-5 w-5" />, s: isLoading ? 'Loading...' : 'Updated this month', d: 100 },
@@ -40,7 +65,15 @@ export const AdminDashboard = () => {
                                         <td className="p-4 font-medium">{m.name}</td><td className="p-4 text-white/60">{m.activity}</td>
                                         <td className="p-4 font-mono text-white/60">{m.expiredOn && !Number.isNaN(new Date(m.expiredOn).getTime()) ? new Date(m.expiredOn).toLocaleDateString() : '--'}</td>
                                         <td className="p-4"><span className="flex items-center gap-1 text-red-400"><AlertCircle className="h-3 w-3" />{m.status}</span></td>
-                                        <td className="p-4 text-right"><button className="text-brand text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors">Renew</button></td>
+                                        <td className="p-4 text-right">
+                                            <button
+                                                onClick={() => handleRenew(m.id)}
+                                                disabled={renewingId === m.id}
+                                                className="text-brand text-[10px] font-bold uppercase tracking-widest hover:text-white transition-colors disabled:opacity-50"
+                                            >
+                                                {renewingId === m.id ? 'Renewing...' : 'Renew'}
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

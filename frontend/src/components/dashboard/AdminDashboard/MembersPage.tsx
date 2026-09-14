@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Edit2, Plus, Trash2, Users } from 'lucide-react';
+import { Edit2, Plus, Trash2, Users, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { RootState, AppDispatch } from '../../../store/store';
 import { fetchMembers, createMember, updateMember, deleteMember, clearMembersError } from '../../../store/slices/membersSlice';
+import { fetchActivities } from '../../../store/slices/activitiesSlice';
+import { fetchSubscriptions } from '../../../store/slices/subscriptionsSlice';
 import type { MemberInput } from '../../../store/interfaces';
 import type { Member } from '../../../types/models';
 import { StatCard } from '../StatCard';
 import { MemberModal, type MemberFormState } from '../modals/MemberModal';
+import { EnrollMemberModal } from '../modals/EnrollMemberModal';
 
 const normalizeDateInput = (valueString?: string) => valueString && !Number.isNaN(new Date(valueString).getTime()) ? new Date(valueString).toISOString().slice(0, 10) : '';
 const formatDate = (valueString?: string) => valueString && !Number.isNaN(new Date(valueString).getTime()) ? new Date(valueString).toLocaleDateString() : '--';
@@ -25,7 +28,16 @@ export const MembersPage = () => {
     const [modalError, setModalError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => { if (isAdmin) dispatch(fetchMembers()); }, [dispatch, isAdmin]);
+    const [isEnrollOpen, setIsEnrollOpen] = useState(false);
+    const [enrollMemberId, setEnrollMemberId] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        if (isAdmin) {
+            dispatch(fetchMembers());
+            dispatch(fetchActivities());
+            dispatch(fetchSubscriptions());
+        }
+    }, [dispatch, isAdmin]);
 
     const newMembersThisMonth = useMemo(() => {
         const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
@@ -80,7 +92,10 @@ export const MembersPage = () => {
         <div className="p-8 space-y-8 animate-fade-in">
             <div className="flex justify-between items-center gap-4">
                 <div><h2 className="text-2xl font-bold tracking-tight">Members</h2><p className="text-white/40 text-sm mt-1">Manage memberships for your gym.</p></div>
-                <button onClick={() => openModal()} className="bg-brand text-black text-xs font-bold uppercase px-4 py-3 hover:bg-white flex items-center gap-2"><Plus className="h-4 w-4" /> Add Member</button>
+                <div className="flex gap-3">
+                    <button onClick={() => { setEnrollMemberId(undefined); setIsEnrollOpen(true); }} className="bg-white/10 text-white text-xs font-bold uppercase px-4 py-3 hover:bg-white/20 flex items-center gap-2 border border-white/10"><UserPlus className="h-4 w-4 text-brand" /> Enroll in Activity</button>
+                    <button onClick={() => openModal()} className="bg-brand text-black text-xs font-bold uppercase px-4 py-3 hover:bg-white flex items-center gap-2"><Plus className="h-4 w-4" /> Add Member</button>
+                </div>
             </div>
 
             {error && <div className="p-4 bg-red-500/10 text-red-500 text-sm">{error}</div>}
@@ -102,6 +117,7 @@ export const MembersPage = () => {
                                         <td className="p-4 text-white/60">{formatDate(member.dateOfBirth)}</td><td className="p-4 text-white/60">{formatDate(member.createdAt)}</td>
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end gap-2">
+                                                <button title="Enroll in Activity" onClick={() => { setEnrollMemberId(member._id); setIsEnrollOpen(true); }} className="p-2 text-white/40 hover:text-brand"><UserPlus className="h-4 w-4" /></button>
                                                 <button onClick={() => openModal(member)} className="p-2 text-white/40 hover:text-brand"><Edit2 className="h-4 w-4" /></button>
                                                 <button onClick={() => handleDelete(member)} className="p-2 text-white/40 hover:text-red-400"><Trash2 className="h-4 w-4" /></button>
                                             </div>
@@ -114,6 +130,7 @@ export const MembersPage = () => {
                 )}
             </div>
             <MemberModal isOpen={isModalOpen} mode={modalMode} values={formState} error={modalError} isSubmitting={isSubmitting} onChange={handleFormChange} onClose={closeModal} onSubmit={handleSubmit} />
+            <EnrollMemberModal isOpen={isEnrollOpen} onClose={() => setIsEnrollOpen(false)} preselectedMemberId={enrollMemberId} onSuccess={() => dispatch(fetchSubscriptions())} />
         </div>
     );
 };

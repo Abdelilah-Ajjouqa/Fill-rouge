@@ -66,6 +66,24 @@ export const fetchPaymentsByGym = createAsyncThunk<
   }
 });
 
+export const createPayment = createAsyncThunk<
+  Payment,
+  { subscription: string; amount: number; paidAt?: string },
+  { rejectValue: string }
+>('payments/createPayment', async (data, { rejectWithValue }) => {
+  try {
+    const response = await api.post<Payment>('/payments', data);
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to create payment',
+      );
+    }
+    return rejectWithValue('Failed to create payment');
+  }
+});
+
 const paymentsSlice = createSlice({
   name: 'payments',
   initialState,
@@ -110,6 +128,19 @@ const paymentsSlice = createSlice({
       state.payments = action.payload;
     });
     builder.addCase(fetchPaymentsByGym.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload as string;
+    });
+
+    builder.addCase(createPayment.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    });
+    builder.addCase(createPayment.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.payments.unshift(action.payload);
+    });
+    builder.addCase(createPayment.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload as string;
     });
