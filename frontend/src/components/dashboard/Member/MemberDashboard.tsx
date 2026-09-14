@@ -5,6 +5,7 @@ import type { RootState, AppDispatch } from '../../../store/store';
 import { fetchMyPayments } from '../../../store/slices/paymentsSlice';
 import { fetchMySubscriptions } from '../../../store/slices/subscriptionsSlice';
 import { getNextMemberSession } from './memberScheduleUtils';
+import { DigitalMemberPass } from './DigitalMemberPass';
 
 const formatMoney = (value: number) => `${value.toLocaleString()} DH`;
 
@@ -96,6 +97,8 @@ export const MemberDashboard = () => {
                     {error}
                 </div>
             )}
+
+            <DigitalMemberPass user={user} activeSubscriptions={activeSubscriptions} />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="space-y-4 animate-fade-in" style={{ animationDelay: '100ms' }}>

@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Users, Clock, AlertTriangle } from 'lucide-react';
+import { Users, Clock, AlertTriangle, UserCheck } from 'lucide-react';
 import type { AppDispatch, RootState } from '../../../store/store';
 import { fetchActivities } from '../../../store/slices/activitiesSlice';
 import { fetchMembers } from '../../../store/slices/membersSlice';
@@ -8,6 +8,7 @@ import { fetchPayments } from '../../../store/slices/paymentsSlice';
 import { fetchSubscriptions } from '../../../store/slices/subscriptionsSlice';
 import type { ScheduleSlot } from '../../../types/models';
 import { StatCard } from '../StatCard';
+import { SessionAttendanceModal } from '../modals/SessionAttendanceModal';
 
 const JS_DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const formatMoney = (value: number) => `${value.toLocaleString()} DH`;
@@ -59,7 +60,10 @@ export const CoachDashboard = () => {
         return acc;
     }, new Map<string, number>()), [coachActiveSubscriptions]);
 
-    const allSessions = useMemo(() => activities.flatMap(a => (a.schedule || []).filter(s => s.day && s.startTime && s.endTime).map((s, i) => ({ id: `${a._id}-${s.day}-${i}`, name: a.name, day: s.day, startTime: s.startTime, endTime: s.endTime, enrolled: enrollmentByActivity.get(a._id) || 0, capacity: a.maxCapacity }))), [activities, enrollmentByActivity]);
+    const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
+    const [selectedSession, setSelectedSession] = useState<{ activityId: string; name: string; startTime: string; endTime: string } | null>(null);
+
+    const allSessions = useMemo(() => activities.flatMap(a => (a.schedule || []).filter(s => s.day && s.startTime && s.endTime).map((s, i) => ({ id: `${a._id}-${s.day}-${i}`, activityId: a._id, name: a.name, day: s.day, startTime: s.startTime, endTime: s.endTime, enrolled: enrollmentByActivity.get(a._id) || 0, capacity: a.maxCapacity }))), [activities, enrollmentByActivity]);
 
     const todayDayName = JS_DAY_ORDER[new Date().getDay()];
     const todaysSessions = useMemo(() => allSessions.filter(s => s.day === todayDayName).sort((a, b) => a.startTime.localeCompare(b.startTime)), [allSessions, todayDayName]);
@@ -114,9 +118,20 @@ export const CoachDashboard = () => {
                             {todaysSessions.map(session => (
                                 <div key={session.id} className="p-4 border border-white/10 bg-white/1 hover:bg-white/3 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                     <div><p className="font-bold text-white/90">{session.name}</p><p className="text-xs text-white/40 font-mono mt-1">{session.startTime} - {session.endTime}</p></div>
-                                    <div className="space-y-2 min-w-[120px]">
-                                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter"><span className="text-white/60">Enrolled</span><span className={session.capacity > 0 && session.enrolled >= session.capacity ? 'text-red-400' : 'text-brand'}>{session.enrolled} / {session.capacity}</span></div>
-                                        <div className="w-full bg-white/5 h-1 border border-white/5"><div className={`h-full transition-all duration-1000 ease-out ${session.capacity > 0 && session.enrolled >= session.capacity ? 'bg-red-500' : 'bg-brand'}`} style={{ width: `${session.capacity > 0 ? Math.min((session.enrolled / session.capacity) * 100, 100) : 0}%` }}></div></div>
+                                    <div className="flex items-center gap-4">
+                                        <div className="space-y-2 min-w-[100px]">
+                                            <div className="flex justify-between text-[10px] font-bold uppercase tracking-tighter"><span className="text-white/60">Enrolled</span><span className={session.capacity > 0 && session.enrolled >= session.capacity ? 'text-red-400' : 'text-brand'}>{session.enrolled} / {session.capacity}</span></div>
+                                            <div className="w-full bg-white/5 h-1 border border-white/5"><div className={`h-full transition-all duration-1000 ease-out ${session.capacity > 0 && session.enrolled >= session.capacity ? 'bg-red-500' : 'bg-brand'}`} style={{ width: `${session.capacity > 0 ? Math.min((session.enrolled / session.capacity) * 100, 100) : 0}%` }}></div></div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedSession(session);
+                                                setIsAttendanceOpen(true);
+                                            }}
+                                            className="px-3 py-2 bg-brand/10 hover:bg-brand text-brand hover:text-black border border-brand/30 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0"
+                                        >
+                                            <UserCheck className="w-3.5 h-3.5" /> Attendance
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -139,6 +154,19 @@ export const CoachDashboard = () => {
                     )}
                 </div>
             </div>
+
+            {selectedSession && (
+                <SessionAttendanceModal
+                    isOpen={isAttendanceOpen}
+                    onClose={() => {
+                        setIsAttendanceOpen(false);
+                        setSelectedSession(null);
+                    }}
+                    activityId={selectedSession.activityId}
+                    activityName={selectedSession.name}
+                    sessionTime={`${selectedSession.startTime} - ${selectedSession.endTime}`}
+                />
+            )}
         </div>
     );
 };

@@ -1,10 +1,11 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { Calendar, Clock, AlertTriangle, UserCheck } from 'lucide-react';
 import type { RootState, AppDispatch } from '../../../store/store';
 import { fetchActivities } from '../../../store/slices/activitiesSlice';
 import type { ScheduleSlot } from '../../../types/models';
 import { StatCard } from '../StatCard';
+import { SessionAttendanceModal } from '../modals/SessionAttendanceModal';
 
 const DAY_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const JS_DAY_ORDER = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -34,9 +35,12 @@ export const CoachSchedulePage = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { activities, isLoading, error } = useSelector((state: RootState) => state.activities);
 
+    const [isAttendanceOpen, setIsAttendanceOpen] = useState(false);
+    const [selectedSession, setSelectedSession] = useState<{ activityId: string; activityName: string; startTime: string; endTime: string } | null>(null);
+
     useEffect(() => { if (isCoach) dispatch(fetchActivities()); }, [dispatch, isCoach]);
 
-    const sessions = useMemo(() => activities.flatMap(activity => (activity.schedule || []).filter(slot => slot.day && slot.startTime && slot.endTime).map((slot, index) => ({ id: `${activity._id}-${slot.day}-${index}`, day: slot.day, startTime: slot.startTime, endTime: slot.endTime, activityName: activity.name, maxCapacity: activity.maxCapacity }))).sort((a, b) => {
+    const sessions = useMemo(() => activities.flatMap(activity => (activity.schedule || []).filter(slot => slot.day && slot.startTime && slot.endTime).map((slot, index) => ({ id: `${activity._id}-${slot.day}-${index}`, activityId: activity._id, day: slot.day, startTime: slot.startTime, endTime: slot.endTime, activityName: activity.name, maxCapacity: activity.maxCapacity }))).sort((a, b) => {
         const da = DAY_ORDER.indexOf(a.day), db = DAY_ORDER.indexOf(b.day);
         const ia = da === -1 ? DAY_ORDER.length : da, ib = db === -1 ? DAY_ORDER.length : db;
         return ia !== ib ? ia - ib : a.startTime.localeCompare(b.startTime);
@@ -74,12 +78,23 @@ export const CoachSchedulePage = () => {
                 {isLoading ? <div className="p-8 text-center text-white/40">Loading schedule...</div> : !sessions.length ? <div className="p-6 border border-dashed border-white/10 text-white/40 text-sm">No scheduled sessions found.</div> : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-white/5 text-white/40 text-[10px] uppercase font-bold tracking-widest"><tr>{['Day', 'Time', 'Activity', 'Capacity'].map(header => <th key={header} className="p-4">{header}</th>)}</tr></thead>
+                            <thead className="bg-white/5 text-white/40 text-[10px] uppercase font-bold tracking-widest"><tr>{['Day', 'Time', 'Activity', 'Capacity', 'Action'].map(header => <th key={header} className={`p-4 ${header === 'Action' ? 'text-right' : ''}`}>{header}</th>)}</tr></thead>
                             <tbody className="divide-y divide-white/5">
                                 {sessions.map(session => (
                                     <tr key={session.id} className="hover:bg-white/2 transition-colors">
                                         <td className="p-4 font-medium">{session.day}</td><td className="p-4 font-mono text-white/60">{session.startTime} - {session.endTime}</td>
                                         <td className="p-4 text-white/80">{session.activityName}</td><td className="p-4 text-white/60">{session.maxCapacity}</td>
+                                        <td className="p-4 text-right">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedSession(session);
+                                                    setIsAttendanceOpen(true);
+                                                }}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand/10 hover:bg-brand text-brand hover:text-black border border-brand/30 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                                            >
+                                                <UserCheck className="w-3.5 h-3.5" /> Attendance
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -98,6 +113,19 @@ export const CoachSchedulePage = () => {
                     </div>
                 )}
             </div>
+
+            {selectedSession && (
+                <SessionAttendanceModal
+                    isOpen={isAttendanceOpen}
+                    onClose={() => {
+                        setIsAttendanceOpen(false);
+                        setSelectedSession(null);
+                    }}
+                    activityId={selectedSession.activityId}
+                    activityName={selectedSession.activityName}
+                    sessionTime={`${selectedSession.startTime} - ${selectedSession.endTime}`}
+                />
+            )}
         </div>
     );
 };
