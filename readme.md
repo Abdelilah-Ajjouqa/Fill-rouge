@@ -1,336 +1,166 @@
-# Cahier des Charges : FitManager — Plateforme Multi-Salle de Sport
+#  FitManager — Multi-Tenant Fitness & Gym Management SaaS
 
-**Projet :** FitManager  
-**Date :** 11 Mars 2026  
-**Stack Technique :** NestJS, React.js, MongoDB, TypeScript
+[![NestJS](https://img.shields.io/badge/Backend-NestJS%2011-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![React](https://img.shields.io/badge/Frontend-React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript%205-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB%20Mongoose-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Styling-Tailwind%20CSS%204-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Swagger](https://img.shields.io/badge/API_Docs-Swagger%20OpenAPI-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](http://localhost:3000/api/docs)
 
----
-
-## 1. Présentation du Projet
-
-### 1.1 C'est quoi ?
-
-FitManager est une plateforme web qui permet de gérer **plusieurs salles de sport** depuis un seul endroit. Chaque salle propose des activités (Boxe, Yoga, Musculation…), et chaque activité a son propre coach, son prix, sa capacité et ses membres.
-
-### 1.2 Le problème qu'on résout
-
-Les salles de sport utilisent souvent des cahiers ou des fichiers Excel pour gérer leurs membres et paiements. FitManager remplace tout ça avec une application simple et centralisée.
-
-### 1.3 Objectifs
-
-- **Multi-salle :** Gérer plusieurs salles de sport sur une seule plateforme.
-- **Gestion par activité :** Chaque activité (Boxe, Yoga…) a son prix, son coach et sa liste de membres.
-- **Suivi des paiements :** Savoir qui a paye et qui est en retard.
-- **Contrôle de capacité :** Si une activité est pleine (ex: 60/60), personne ne peut s'inscrire jusqu'à qu'une place se libère.
+> A modern, full-stack gym management platform featuring **Role-Based Access Control (RBAC)**, **real-time session attendance tracking**, **digital member QR passes**, **automated subscription lifecycle management**, and **revenue analytics**.
 
 ---
 
-## 2. Stack Technique
+##  Overview
 
-| Couche | Technologie |
-|--------|-------------|
-| Backend | NestJS (TypeScript) |
-| Base de données | MongoDB (une seule base partagée) |
-| Frontend | React.js, Tailwind CSS |
-| Authentification | JWT (JSON Web Token) |
+Traditional gyms struggle with fragmented spreadsheets, manual paper sign-ins, and chaotic payment tracking. **FitManager** solves these operational pain points with a scalable, multi-tenant solution designed for gym networks, independent fitness clubs, coaches, and members.
 
-### 2.1 Architecture de la base de données
+###  4-Tier Role Architecture (RBAC)
 
-On utilise **une seule base de données** pour toutes les salles. Chaque document (utilisateur, activité, abonnement…) contient un champ `gymId` pour savoir à quelle salle il appartient. C'est plus simple à gérer et suffisant pour notre cas.
+```mermaid
+graph TD
+    SuperAdmin[" Super Admin<br/>(Global Network Oversight & Gym Management)"]
+    Admin[" Gym Admin<br/>(Revenue, Memberships, Activities, Payments & Renewals)"]
+    Coach[" Coach<br/>(Class Schedules, Assigned Members & Session Attendance)"]
+    Member[" Member<br/>(Personal Schedule, Fee Balance & Digital QR Pass)"]
+
+    SuperAdmin --> Admin
+    Admin --> Coach
+    Coach --> Member
+```
+
+* ** Super Admin:** Platform-level administrator managing gym clubs, assigning gym admins, and inspecting platform-wide analytics.
+* ** Gym Admin:** Facility owner managing club activities, member directory, subscription creation/renewals, and financial revenue tracking.
+* ** Coach:** Instructors scoped specifically to their assigned activities, member lists, and daily session attendance rosters.
+* ** Member:** Adherents with a dedicated portal displaying their active memberships, payment status, class schedule, and digital QR gym pass.
 
 ---
 
-## 3. Les Rôles
+##  Standout Features
 
-Il y a **4 rôles** dans la plateforme, organisés comme une pyramide :
+### 1.  Session Attendance Tracking & Digital Member Pass
+* **One-Click Coach Check-In:** Coaches open today's class roster to mark students as `Present` or `Absent` with a single click, or batch-mark the entire session with "Mark All Present".
+* **Digital Member QR Pass:** Members carry a live digital pass on their dashboard with an SVG QR code encoding their member credentials and active status for seamless front-desk verification.
 
-### 3.1 Super Admin (1 seul — le propriétaire de la plateforme)
+### 2.  Real-Time Capacity & Overbooking Protection
+* Activities evaluate room hall capacity and activity ceilings dynamically.
+* If a class is at capacity (e.g., `20/20`), the enrollment workflow automatically locks to guarantee safety and prevent overcrowding.
 
-- Crée et gère les salles de sport.
-- Ajoute un Admin pour chaque salle.
-- Voit les statistiques globales de toutes les salles.
-- Peut suspendre ou activer une salle.
+### 3.  Automated Expiry & One-Click Renewals
+* **Background Cron Job:** Powered by `@nestjs/schedule`, an hourly task runs in the background to automatically identify memberships past their `endDate` and transition them to `expired`.
+* **Instant Renewal:** Admins can renew expired memberships with a single click right from the dashboard attention list, advancing validity by 1 month.
 
-### 3.2 Admin (1 par salle — le propriétaire de la salle)
+### 4.  Direct Payment Processing
+* Gym staff can record full subscription dues (Cash, Credit Card, Bank Transfer) with automated balance synchronization.
 
-- Gère **sa propre salle** uniquement.
-- Crée les activités (Boxe, Yoga…) avec : nom, prix mensuel, capacité max, planning.
-- Ajoute les coachs et les assigne à des activités.
-- Voit le chiffre d'affaires de sa salle.
-- Voit tous les membres de sa salle.
-
-### 3.3 Coach (responsable d'une activité)
-
-- Ne voit que les membres inscrits à **son** activité.
-- Peut ajouter de nouveaux membres à son activité.
-- Voit le statut de paiement de ses membres (payé / pas payé).
-- Gère les présences de ses séances.
-
-### 3.4 Membre (adhérent)
-
-- **Possède un compte** sur la plateforme avec un accès **lecture seule**.
-- Est créé et géré par le coach ou l'admin (qui lui crée son compte).
-- Peut être inscrit à **plusieurs activités** dans la même salle.
-- Peut se connecter pour consulter :
-  - Ses abonnements actifs et expirés
-  - Son historique de paiements et son statut
-  - Le planning de ses activités
-- Peut modifier ses **informations de base** (photo, téléphone, email, mot de passe).
-- Ne peut **pas modifier** les champs critiques (certificat médical, abonnements, paiements) — cela passe par le coach ou l'admin.
+### 5.  Local Device Profile Photo Uploads
+* Custom `PATCH /auth/me` endpoint using **Multer disk storage** to upload profile avatars directly from the user's computer/phone with file-type validation and size limits.
 
 ---
 
-## 4. Les Modules
+##  Tech Stack & Architecture
 
-### 4.1 Module : Gestion des Salles (Gyms)
+### Backend
+* **Framework:** [NestJS](https://nestjs.com/) (Modular Architecture, Dependency Injection)
+* **Database & ODM:** [MongoDB](https://www.mongodb.com/) with [Mongoose](https://mongoosejs.com/)
+* **Authentication & Security:** Passport JWT, Bcrypt password hashing, Custom Role Guards (`RolesGuard`, `JwtAuthGuard`)
+* **Automation:** `@nestjs/schedule` for hourly cron processing
+* **File Handling:** Multer with static asset serving
+* **Documentation:** Swagger OpenAPI (`@nestjs/swagger`)
 
-Le Super Admin peut créer des salles de sport.
-
-**Données d'une salle :**
-- Nom (ex: "FitClub Casablanca")
-- Adresse
-- Téléphone
-- Logo (upload depuis l'appareil)
-- Statut (active / suspendue)
-
-### 4.2 Module : Gestion des Activités
-
-L'Admin de chaque salle crée les activités proposées.
-
-**Données d'une activité :**
-- Nom (ex: "Kick-Boxing Adulte")
-- Coach responsable
-- Prix mensuel (ex: 300 DH)
-- Capacité max (ex: 60 places)
-- Planning (ex: Lundi et Mercredi, 16h00 → 17h00)
-- Statut (active / inactive)
-
-**Règles :**
-- Si le nombre de membres actifs atteint la capacité max → l'activité est automatiquement **pleine**. Plus personne ne peut s'inscrire jusqu'à qu'une place se libère.
-- Pas besoin de fermer manuellement — la capacité contrôle tout.
-
-### 4.3 Module : Gestion des Membres
-
-Les membres sont ajoutés par les coachs ou les admins. Ils appartiennent à **une salle** (pas à la plateforme). Ils possèdent un compte avec accès **lecture seule**.
-
-**Données d'un membre :**
-- Nom, Prénom
-- Email
-- Mot de passe
-- Téléphone
-- Date de naissance
-- Photo (optionnel)
-- Certificat médical (optionnel)
-
-**Règles :**
-- Un membre peut être inscrit à plusieurs activités dans la même salle (ex: Boxe + Yoga).
-- Si deux activités ont le même horaire, le système affiche un **avertissement** mais ne bloque pas l'inscription (le membre choisira laquelle il attend chaque jour).
-- Un membre peut se connecter pour consulter ses données ou modifier son profil de base (téléphone, email, mot de passe, photo).
-
-### 4.4 Module : Abonnements
-
-Un abonnement lie un membre à une activité. C'est ici qu'on gère l'argent et l'accès.
-
-**Données d'un abonnement :**
-- Membre concerné
-- Activité concernée
-- Date de début
-- Date de fin (calculée : début + 1 mois)
-- Statut (actif / expiré / annulé)
-
-**Exemple :**
-> Karim s'inscrit à la Boxe le 01/01.  
-> Prix : 300 DH/mois.  
-> Son abonnement expire le 31/01.  
-> S'il ne renouvelle pas → statut = expiré.
-
-### 4.5 Module : Paiements
-
-Chaque paiement est lié à un abonnement. Le systeme accepte uniquement les **paiements complets** (pas de paiements partiels).
-
-**Données d'un paiement :**
-- Abonnement concerné
-- Montant payé
-- Montant dû (total)
-- Date du paiement
-
-**Exemple :**
-> L'abonnement de Karim coûte 300 DH.  
-> Il paye 300 DH en une fois → statut = paye.
-
-### 4.6 Module : Tableau de Bord (Dashboard)
-
-Chaque rôle voit un dashboard différent.
-
-**Super Admin :**
-- Nombre total de salles
-- Nombre total de membres (toutes salles)
-- Revenu global
-
-**Admin :**
-- Revenu de sa salle
-- Nombre de membres actifs
-- Activité la plus rentable
-- Liste des membres avec abonnement expiré
-
-**Coach :**
-- Nombre de membres dans son activité (ex: 21/60)
-- Liste des membres avec paiement en retard
-- Prochaines séances
-
-**Membre :**
-- Ses abonnements actifs (activités, dates, statut)
-- Son historique de paiements et statut
-- Le planning de ses activités (jours et horaires)
+### Frontend
+* **Core:** React 19 + TypeScript + [Vite](https://vitejs.dev/)
+* **State Management:** Redux Toolkit (`@reduxjs/toolkit`, `react-redux`)
+* **Styling:** Tailwind CSS v4 + Framer Motion
+* **Icons & Notifications:** Lucide React, Sonner Toasts
+* **QR Codes:** `qrcode.react` (SVG rendering)
 
 ---
 
-## 5. Modèle de Données
+##  Project Structure
 
-### A. Collection `gyms`
 ```
-{
-  name: String,
-  address: String,
-  phone: String,
-  logo: String,
-  isActive: Boolean,
-  createdAt, updatedAt
-}
-```
-
-### B. Collection `users` (Admin, Coach)
-```
-{
-  gymId: ObjectId → gyms,
-  firstName: String,
-  lastName: String,
-  email: String (unique),
-  passwordHash: String,
-  role: "SUPER_ADMIN" | "ADMIN" | "COACH",
-  isActive: Boolean,
-  createdAt, updatedAt
-}
-```
-Note : Le Super Admin n'a pas de `gymId` (il gère la plateforme entière).
-
-### C. Collection `members`
-```
-{
-  gymId: ObjectId → gyms,
-  firstName: String,
-  lastName: String,
-  email: String (unique),
-  passwordHash: String,
-  phone: String,
-  dateOfBirth: Date,
-  photo: String,
-  medicalCertificate: String,
-  createdAt, updatedAt
-}
-```
-Note : Les membres peuvent consulter toutes leurs données et modifier uniquement leurs informations de base (téléphone, email, mot de passe, photo). Les champs critiques (abonnements, certificat médical) sont en lecture seule.
-
-### D. Collection `activities`
-```
-{
-  gymId: ObjectId → gyms,
-  name: String,
-  coach: ObjectId → users,
-  monthlyPrice: Number,
-  maxCapacity: Number,
-  schedule: [{ day: String, startTime: String, endTime: String }],
-  isActive: Boolean,
-  createdAt, updatedAt
-}
-```
-
-### E. Collection `subscriptions`
-```
-{
-  gymId: ObjectId → gyms,
-  member: ObjectId → members,
-  activity: ObjectId → activities,
-  startDate: Date,
-  endDate: Date,
-  status: "active" | "expired" | "cancelled",
-  createdAt, updatedAt
-}
-```
-
-### F. Collection `payments`
-```
-{
-  gymId: ObjectId → gyms,
-  subscription: ObjectId → subscriptions,
-  amount: Number,
-  amountDue: Number,
-  paidAt: Date,
-  createdAt, updatedAt
-}
+FitManager/
+├── backend/
+│   ├── src/
+│   │   ├── activities/      # Activity schemas, service, controller
+│   │   ├── attendance/      # Attendance tracking & session check-ins
+│   │   ├── auth/            # JWT auth, login, register, profile updates
+│   │   ├── gyms/            # Gym facility management & hall capacity
+│   │   ├── members/         # Member CRUD & coach-scoped queries
+│   │   ├── payments/        # Payment recording & dues calculation
+│   │   ├── subscriptions/   # Subscriptions, cron expiry & renewals
+│   │   └── users/           # Admin and coach account management
+│   └── seed-admin-dashboard.js # Comprehensive database seeder
+├── frontend/
+│   ├── src/
+│   │   ├── api/             # Axios instance & interceptors
+│   │   ├── components/      # Reusable dashboard, modal & UI components
+│   │   ├── hooks/           # Custom React hooks (navigation, admin data)
+│   │   ├── pages/           # Auth, Dashboard, and Profile views
+│   │   ├── store/           # Redux Toolkit slices and interfaces
+│   │   └── types/           # TypeScript interfaces & models
+└── docker-compose.yml       # MongoDB local container service
 ```
 
 ---
 
-## 6. API (Endpoints Principaux)
+##  Quickstart & Local Setup
 
-### Auth
-| Méthode | Route | Qui | Description |
-|---------|-------|-----|-------------|
-| POST | /auth/login | Tous (y compris membres) | Se connecter |
-| POST | /auth/register | Super Admin / Admin | Créer un compte (admin, coach, ou membre) |
-| GET | /auth/me | Tous (authentifié) | Voir son propre profil |
-| PATCH | /auth/me | Tous (authentifié) | Modifier son propre profil de base (nom, téléphone, mot de passe) |
+### 1. Prerequisites
+* [Node.js](https://nodejs.org/) (v18+ recommended)
+* [Docker](https://www.docker.com/) (or a local MongoDB instance running on port 27017)
 
-### Gyms
-| Méthode | Route | Qui | Description |
-|---------|-------|-----|-------------|
-| POST | /gyms | Super Admin | Créer une salle |
-| GET | /gyms | Super Admin | Lister toutes les salles |
-| GET | /gyms/:id | Super Admin / Admin | Voir une salle |
-| PATCH | /gyms/:id | Super Admin | Modifier une salle |
-| DELETE | /gyms/:id | Super Admin | Supprimer une salle |
+### 2. Start the Database
+```bash
+docker-compose up -d
+```
 
-### Activities
-| Méthode | Route | Qui | Description |
-|---------|-------|-----|-------------|
-| POST | /activities | Admin | Créer une activité |
-| GET | /activities | Admin / Coach | Lister (coach voit seulement les siennes) |
-| PATCH | /activities/:id | Admin | Modifier |
-| DELETE | /activities/:id | Admin | Supprimer |
+### 3. Backend Setup
+```bash
+cd backend
+npm install
+npm run build
 
-### Members
-| Méthode | Route | Qui | Description |
-|---------|-------|-----|-------------|
-| POST | /members | Admin / Coach | Ajouter un membre |
-| GET | /members | Admin / Coach | Lister (coach voit seulement ses membres) |
-| GET | /members/:id | Admin / Coach | Voir un membre |
-| PATCH | /members/:id | Admin / Coach | Modifier (tous les détails, y compris certificat médical) |
-| DELETE | /members/:id | Admin | Supprimer |
+# Seed sample gyms, activities, members, and schedules
+node seed-admin-dashboard.js
 
-### Subscriptions
-| Méthode | Route | Qui | Description |
-|---------|-------|-----|-------------|
-| POST | /subscriptions | Admin / Coach | Inscrire un membre à une activité |
-| GET | /subscriptions | Admin / Coach | Lister les abonnements |
-| PATCH | /subscriptions/:id | Admin | Modifier (annuler, renouveler) |
+# Start the NestJS backend
+npm run start:dev
+```
+* Backend API runs on: `http://localhost:3000`
+* Interactive Swagger API Docs: `http://localhost:3000/api/docs`
 
-### Payments
-| Méthode | Route | Qui | Description |
-|---------|-------|-----|-------------|
-| POST | /payments | Admin / Coach | Enregistrer un paiement |
-| GET | /payments | Admin / Coach | Lister les paiements |
-| GET | /payments/unpaid | Admin / Coach | Voir les paiements en attente |
+### 4. Frontend Setup
+```bash
+cd ../frontend
+npm install
+npm run dev
+```
+* Frontend Application runs on: `http://localhost:5173`
 
 ---
 
-## 7. Règles Métier Résumées
+##  Demo Login Credentials
 
-1. **Un membre appartient à une salle**, pas à la plateforme.
-2. **Un membre peut s'inscrire à plusieurs activités** dans la même salle.
-3. **Si une activité est pleine** (capacité max atteinte) → inscription bloquée automatiquement.
-4. **Si deux activités ont le même horaire** → avertissement affiché, mais inscription autorisée.
-5. **Les paiements complets sont obligatoires** → aucun paiement partiel n'est accepte.
-6. **L'abonnement expire automatiquement** après la période payée (1 mois par défaut).
-7. **Les membres ont un compte limité** — ils peuvent modifier leurs infos de base, mais leurs abonnements, paiements et plannings sont en lecture seule.
-8. **Chaque rôle ne voit que ce qui le concerne** (isolation des données par salle et par rôle).
+You can test each role using the pre-seeded credentials:
+
+| Role | Email | Password | Access Highlights |
+|---|---|---|---|
+| **Super Admin** | `admin@fitmanager.com` | `superadmin123` | Multi-club oversight, global analytics |
+| **Gym Admin** | `admin.casablanca@fitmanager.com` | `admin1234` | Revenue stats, member directory, renewals |
+| **Coach** | `coach.casablanca@fitmanager.com` | `coach1234` | Schedule, attendance roster check-in |
+| **Member** | `member.active.casablanca@fitmanager.com` | `member1234` | Active pass, digital QR pass, payments |
+
+---
+
+##  Verification & Quality
+
+* **Backend Compilation:** Clean NestJS compilation passing strict TypeScript checks (`nest build`).
+* **Frontend Compilation:** Production bundle optimized with Vite & React 19 (`tsc -b && vite build`).
+* **API Documentation:** Fully documented with Swagger decorators across all controllers and DTOs.
+
+---
+
+##  License
+This project is open-source and available under the [MIT License](LICENSE).
