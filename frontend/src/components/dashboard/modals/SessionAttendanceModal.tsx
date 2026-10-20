@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../../../api/axios';
+import { resolveMediaUrl } from '../../../utils/media';
 import { toast } from 'sonner';
 import {
   X,
@@ -264,15 +265,14 @@ export const SessionAttendanceModal = ({
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                      {member.photo ? (
+                      {resolveMediaUrl(member.photo) ? (
                         <img
-                          src={
-                            member.photo.startsWith('http')
-                              ? member.photo
-                              : `http://localhost:3000${member.photo}`
-                          }
+                          src={resolveMediaUrl(member.photo)!}
                           alt=""
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                          }}
                         />
                       ) : (
                         <span className="text-xs font-bold text-white/70 uppercase">

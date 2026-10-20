@@ -5,10 +5,11 @@ import type { AppDispatch, RootState } from '../../../store/store';
 import type { Gym, Hall } from '../../../types/models';
 import { Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { resolveMediaUrl } from '../../../utils/media';
 
 export interface GymFormProps { gym?: Gym; onSuccess: () => void; onCancel: () => void; }
 
-const resolveGymLogoUrl = (logoString?: string | null) => logoString ? (logoString.startsWith('http') || logoString.startsWith('data:') ? logoString : `${import.meta.env.VITE_API_BASE_URL || ''}${logoString.startsWith('/') ? '' : '/uploads/'}${logoString}`) : null;
+const resolveGymLogoUrl = resolveMediaUrl;
 
 const InputField = ({ label, type, value, onChange, placeholder, max, pattern, textContent }: any) => (
     <div>

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument, UserRole } from './schemas/user.schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -67,7 +67,7 @@ export class UsersService {
   }
 
   async findAll(gymId?: string): Promise<User[]> {
-    const filter = gymId ? { gymId } : {};
+    const filter = gymId ? { gymId: new Types.ObjectId(gymId) } : {};
     return this.userModel.find(filter).select('-passwordHash').exec();
   }
 

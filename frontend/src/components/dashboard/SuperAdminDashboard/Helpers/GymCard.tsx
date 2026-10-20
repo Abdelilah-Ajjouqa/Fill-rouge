@@ -1,13 +1,9 @@
 import { Edit2, Flame, MapPin, Phone } from 'lucide-react';
 import { DeleteBtn } from './Delete-btn';
 import type { GymCardProps } from '../../../../types/super-admin';
+import { resolveMediaUrl } from '../../../../utils/media';
 
-const resolveLogo = (logo?: string | null) => {
-    if (!logo) return null;
-    if (/^https?:\/\/|^data:/.test(logo)) return logo;
-    const base = import.meta.env.VITE_API_BASE_URL || '';
-    return logo.startsWith('/') ? `${base}${logo}` : `${base}/uploads/${logo}`;
-};
+const resolveLogo = resolveMediaUrl;
 
 export const GymCard = ({ gym, animationDelayMs, onEdit, onDelete, onManageAdmins, onViewDetails }: GymCardProps) => (
     <article

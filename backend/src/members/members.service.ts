@@ -36,7 +36,7 @@ export class MembersService {
   }
 
   async findAll(gymId?: string) {
-    const filter = gymId ? { gymId } : {};
+    const filter = gymId ? { gymId: new Types.ObjectId(gymId) } : {};
     return this.memberModel.find(filter).select('-passwordHash').exec();
   }
 

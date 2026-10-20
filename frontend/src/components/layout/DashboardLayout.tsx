@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
 import { useNavItems } from '../../hooks/useNavItems';
+import { resolveMediaUrl } from '../../utils/media';
 
 type defaultBrandingState = {
     platformName: string;
@@ -87,11 +88,14 @@ export const DashboardLayout = () => {
                         title="View & Edit Profile"
                     >
                         <div className="h-8 w-8 rounded-full overflow-hidden bg-white/10 flex items-center justify-center border border-white/20 shrink-0 group-hover:border-brand transition-colors">
-                            {user?.photo ? (
+                            {resolveMediaUrl(user?.photo) ? (
                                 <img
-                                    src={user.photo.startsWith('http') ? user.photo : `http://localhost:3000${user.photo}`}
+                                    src={resolveMediaUrl(user?.photo)!}
                                     alt={profileName}
                                     className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                        (e.target as HTMLElement).style.display = 'none';
+                                    }}
                                 />
                             ) : (
                                 <User className="h-4 w-4 text-white/60 group-hover:text-brand transition-colors" />

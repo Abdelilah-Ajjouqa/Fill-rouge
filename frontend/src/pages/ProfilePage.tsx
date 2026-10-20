@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import api from '../api/axios';
+import { resolveMediaUrl } from '../utils/media';
 
 export const ProfilePage = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -29,6 +30,7 @@ export const ProfilePage = () => {
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -37,6 +39,7 @@ export const ProfilePage = () => {
       setFirstName(user.firstName || '');
       setLastName(user.lastName || '');
       setPhone(user.phone ? String(user.phone) : '');
+      setAvatarLoadError(false);
 
       if (user.gymId) {
         api
@@ -49,13 +52,7 @@ export const ProfilePage = () => {
     }
   }, [user]);
 
-  const currentAvatarSrc = previewUrl
-    ? previewUrl
-    : user?.photo
-      ? user.photo.startsWith('http')
-        ? user.photo
-        : `http://localhost:3000${user.photo}`
-      : null;
+  const currentAvatarSrc = previewUrl || resolveMediaUrl(user?.photo);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,6 +65,7 @@ export const ProfilePage = () => {
         toast.error('Image file size must be less than 5MB');
         return;
       }
+      setAvatarLoadError(false);
       setAvatarFile(file);
       setPreviewUrl(URL.createObjectURL(file));
     }
@@ -75,6 +73,7 @@ export const ProfilePage = () => {
 
   const handleRemoveSelectedFile = () => {
     setAvatarFile(null);
+    setAvatarLoadError(false);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
@@ -146,11 +145,12 @@ export const ProfilePage = () => {
         <div className="bg-slate-900 border border-white/10 p-6 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative">
           <div className="relative group shrink-0">
             <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-brand/50 bg-slate-950 flex items-center justify-center shadow-lg">
-              {currentAvatarSrc ? (
+              {currentAvatarSrc && !avatarLoadError ? (
                 <img
                   src={currentAvatarSrc}
                   alt="Profile"
                   className="w-full h-full object-cover"
+                  onError={() => setAvatarLoadError(true)}
                 />
               ) : (
                 <User className="w-12 h-12 text-white/40" />

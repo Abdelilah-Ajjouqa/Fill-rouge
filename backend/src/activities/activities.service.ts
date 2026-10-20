@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
@@ -189,7 +189,7 @@ export class ActivitiesService {
   }
 
   async findAll(gymId?: string): Promise<Activity[]> {
-    const filter = gymId ? { gymId } : {};
+    const filter = gymId ? { gymId: new Types.ObjectId(gymId) } : {};
     return this.activityModel
       .find(filter)
       .populate('coach', 'firstName lastName email')
